@@ -1,0 +1,15 @@
+eclipse.preferences.version=1
+encoding//old/cohorte.py=utf-8
+encoding//old/main.py=utf-8
+encoding//src/Config.py=utf-8
+encoding//src/ga.pyw=utf-8
+encoding//src/gui/ga.pyw=utf-8
+encoding//src/lib/build.py=utf-8
+encoding//src/lib/cohorte.py=utf-8
+encoding//src/lib/qthelpers.py=utf-8
+encoding//src/plugins/Parameters.py=utf-8
+encoding//src/plugins/Plot.py=utf-8
+encoding//src/plugins/PopulationData.py=utf-8
+encoding//src/plugins/ProfilesData.py=utf-8
+encoding//src/test_ga.py=utf-8
+encoding//src/widgets/MainWindow.py=utf-8
