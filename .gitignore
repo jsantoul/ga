@@ -26,10 +26,10 @@ pip-log.txt
 .tox
 nosetests.xml
 
-# Translations
-*.mo
 
 # Mr Developer
-.mr.developer.cfg
 .project
 .pydevproject
+
+
+src/countries/france/sources/data_fr
