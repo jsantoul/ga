@@ -27,6 +27,35 @@ def side_by_side(*objs, **kwds):
     print adjoin(space, *reprs)
 
 
+def of_import(module = None, classname = None, country = None):
+    """
+    Returns country specific class found in country module
+    
+    Parameters
+    ----------
+    module : str, default None
+             name of the module where the object is to be imported
+    classname : str, default None
+                name of the object or class to import      
+    country : str, default None, required to be not None
+              name of the country (france, tunisa for the moment)  
+    
+    """
+    
+    if module is None:
+        module_str = ""
+    else:
+        module_str = "." + module
+    
+    if classname is None or country is None:
+        raise Exception("classname or country needed")
+    
+    _temp = __import__('src.countries.' + country + module_str, globals = globals(), locals = locals(), fromlist = [classname], level=-1)
+
+    
+    return getattr(_temp, classname, None)
+
+
 
 if __name__ == '__main__':
     pass

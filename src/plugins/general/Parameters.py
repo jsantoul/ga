@@ -25,14 +25,14 @@ This file is part of openFisca.
 """
     TODO choix de la méthode de projection de la population au delà des valeurs du scénario
 """
-from PyQt4.QtGui import (QWidget, QDockWidget, QLabel, QVBoxLayout, QComboBox, QDoubleSpinBox, 
+from src.gui.qt.QtGui import (QWidget, QDockWidget, QLabel, QVBoxLayout, QComboBox, QDoubleSpinBox, 
                          QApplication, QMessageBox)
-from PyQt4.QtCore import SIGNAL, QVariant
-from core.qthelpers import OfSs
+from src.gui.qt.QtCore import SIGNAL, QVariant
+from src.gui.qthelpers import OfSs
 from pandas import HDFStore
 
-from core.qthelpers import MyComboBox, MyDoubleSpinBox
-from Config import CONF
+from src.gui.qthelpers import MyComboBox, MyDoubleSpinBox
+from src.gui.config import CONF
 
 
 class ParametersWidget(QDockWidget):
@@ -97,7 +97,7 @@ class ParametersWidget(QDockWidget):
         #self.connect(self.grth_spin.box, SIGNAL('currentIndexChanged(int)'), self.set_grth())
 
         # Initialize parameters        
-        self.init_parameters()
+#        self.init_parameters()
 
 
     def init_parameters(self):
