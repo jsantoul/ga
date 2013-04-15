@@ -32,4 +32,4 @@ nosetests.xml
 .pydevproject
 
 
-src/countries/france/sources/data_fr
+src/countries/france/sources/data_fr/
