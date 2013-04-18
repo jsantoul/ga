@@ -494,9 +494,14 @@ class MainWindow(QMainWindow):
 #            
 #            self.parameters = ParametersWidget(self)
 #            self.parameters.register_plugin()
+        
+        
+        from src.lib.simulation import Simulation          
+        self.simulation = Simulation()
+        self.simulation.set_country("france")
                                                 
         self.profiles_explorer = ProfilesExplorerWidget(self)
-        self.profiles_explorer.register_plugin() 
+        self.profiles_explorer.register_plugin()
         
                        
         # ? menu

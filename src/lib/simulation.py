@@ -20,6 +20,20 @@ class Simulation(object):
         self.tax_projection = None
         self.growth_rate = None
         self.discount_rate = None
+        self.country = None
+        
+        
+    def set_country(self, country):
+        """
+        Set simulation country
+        
+        Parameters
+        ----------
+        country : str
+                  country of the simulation
+        """
+        self.country = country
+        
         
     def get_population_choices(self, filename):
         store_pop = HDFStore(filename,'r')
@@ -35,7 +49,6 @@ class Simulation(object):
                     Dataframe conaining the population
         
         """
-        
         self.population = dataframe 
         
     

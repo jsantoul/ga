@@ -2,20 +2,16 @@
 # Copyright © 2012 Clément Schaff, Mahdi Ben Jelloul
 
 
-from src.gui.qt.QtGui import (QWidget, QDockWidget, QLabel, QHBoxLayout, QVBoxLayout, QApplication, QCursor, QGroupBox, QButtonGroup)
+from src.gui.qt.QtGui import (QWidget, QDockWidget, QLabel, QHBoxLayout, QVBoxLayout, QGroupBox, QButtonGroup)
 from src.gui.qt.QtCore import SIGNAL, Signal, Qt
 from src.gui.qthelpers import OfSs
 from src.gui.config import get_icon
-from pandas import DataFrame
-from pandas.sandbox.qtpandas import DataFrameWidget
-
+#from pandas.sandbox.qtpandas import DataFrameWidget
+from src.gui.qthelpers import DataFrameViewWidget 
 
 from src.plugins import OpenfiscaPluginWidget, PluginConfigPage
 from src.gui.baseconfig import get_translation
 _ = get_translation('src')
-
-
-from src.gui.qt.compat import from_qvariant
 
 
 class ProfilesExplorerConfigPage(PluginConfigPage):
@@ -24,17 +20,17 @@ class ProfilesExplorerConfigPage(PluginConfigPage):
         self.get_name = lambda: _("Profiles data explorer")
         
     def setup_page(self):
-        '''
+        """
         Setup the page of the survey widget
-        '''
+        """
         
         profiles_group = QGroupBox(_("Alternatives profiles data")) 
         profiles_bg = QButtonGroup(self)
         profiles_label = QLabel(_("Location of profiles data")) 
 
-        bareme_only_radio = self.create_radiobutton(_("Use country default data"),
+        country_default_radio = self.create_radiobutton(_("Use country default profiles data"),
                                                     'use_default', False,
-                                                    tip = _("Use country default data"),
+                                                    tip = _("Use country default profiles data"),
                                                     
                                 button_group = profiles_bg)
         profiles_radio = self.create_radiobutton(_("The following file"),  # le fichier suivant",
@@ -44,7 +40,7 @@ class ProfilesExplorerConfigPage(PluginConfigPage):
         profiles_file = self.create_browsefile("", 'data_file',
                                              filters='*.h5')
         
-        self.connect(bareme_only_radio, SIGNAL("toggled(bool)"),
+        self.connect(country_default_radio, SIGNAL("toggled(bool)"),
                      profiles_file.setDisabled)
         self.connect(profiles_radio, SIGNAL("toggled(bool)"),
                      profiles_file.setEnabled)
@@ -54,7 +50,7 @@ class ProfilesExplorerConfigPage(PluginConfigPage):
 
         profiles_layout = QVBoxLayout()
         profiles_layout.addWidget(profiles_label)
-        profiles_layout.addWidget(bareme_only_radio)
+        profiles_layout.addWidget(country_default_radio)
         profiles_layout.addLayout(profiles_file_layout)
         profiles_group.setLayout(profiles_layout)
 
@@ -84,7 +80,7 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
         self.setObjectName( _("Profiles data explorer"))
         self.dockWidgetContents = QWidget()
 
-        self.view = DataFrameWidget(DataFrame(), parent = self.dockWidgetContents)
+        self.view = DataFrameViewWidget(self.dockWidgetContents)
 
         verticalLayout = QVBoxLayout(self.dockWidgetContents)
         verticalLayout.addWidget(self.view)
@@ -92,34 +88,12 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
 
         # Initialize attributes
         self.parent = parent    
-        self.data = DataFrame() 
         self.initialize_plugin() # To run the suitable inherited API methods
     
-
-    def set_dataframe(self, dataframe = None, name = None):
-        '''
-        Sets the current dataframe
-        '''
-        if name is not None:
-            self.data = self.dataframes[name]
-        if dataframe is not None:
-                self.data = dataframe
-        
-    def update_view(self):
-        QApplication.setOverrideCursor(QCursor(Qt.WaitCursor))
-        
-        df = self.data.copy()
-        if not isinstance(df, DataFrame): 
-            print 'Not dataframe'
-            df = DataFrame(df)
-            
-        self.view.dataModel.setDataFrame(df)
-        self.view.dataModel.signalUpdate()
-        QApplication.restoreOverrideCursor()
-                        
+                                
     def clear(self):
-        self.view.dataModel.reset()
-        self.data = None
+        self.view.reset()
+
 
 
     #------ OpenfiscaPluginMixin API ---------------------------------------------
@@ -130,8 +104,15 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
         """
                 
         if 'data_file' in options:
-            pass # TODO
-    
+            NotImplementedError
+       
+        if 'use_default' in options:     
+            from src.lib.utils import of_import
+            default_profiles_filename = of_import("","DEFAULT_PROFILES_FILENAME", self.simulation.country)
+            self.simulation.load_profiles(default_profiles_filename)
+            self.refresh_plugin()
+            
+            
     #------ OpenfiscaPluginWidget API ---------------------------------------------
 
     def get_plugin_title(self):
@@ -183,6 +164,7 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
         """
         Register plugin in OpenFisca's main window
         """
+        self.simulation = self.main.simulation
         self.main.add_dockwidget(self)
 
     def refresh_plugin(self):
@@ -190,7 +172,8 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
         Update Survey dataframes
         '''
         self.starting_long_process(_("Refreshing profiles explorer dataframe ..."))
-        self.update_view()
+        self.clear()
+        self.view.set_dataframe(self.simulation.profiles.reset_index())
         self.ending_long_process(_("Profiles explorer dataframe updated"))
     
     def closing_plugin(self, cancelable=False):

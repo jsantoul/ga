@@ -1,16 +1,10 @@
 Traceback (most recent call last):
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 1426, in main
+  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 1431, in main
     mainwindow = run_spyder(app, options)
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 1342, in run_spyder
+  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 1347, in run_spyder
     main.setup()
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 499, in setup
-    self.profiles_explorer.register_plugin()
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\plugins\general\ProfilesData.py", line 195, in register_plugin
-    self.main.add_dockwidget(self)
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 888, in add_dockwidget
-    dockwidget, location = child.create_dockwidget()
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\plugins\__init__.py", line 145, in create_dockwidget
-    self.update_margins()
-  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\plugins\__init__.py", line 107, in update_margins
-    self.default_margins = layout.getContentsMargins()
-AttributeError: 'NoneType' object has no attribute 'getContentsMargins'
+  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\ga.pyw", line 503, in setup
+    self.profiles_explorer = ProfilesExplorerWidget(self)
+  File "C:\Users\Utilisateur\My Documents\Aptana Studio 3 Workspace\ga\src\plugins\general\ProfilesData.py", line 84, in __init__
+    self.view = DataFrameWidget(DataFrame(), parent = self.dockWidgetContents)
+TypeError: __init__() got multiple values for keyword argument 'parent'
