@@ -25,14 +25,14 @@ class Cohorts(DataFrame):
             if set(['age', 'sex', 'year']) != set(self.index.names):
                 raise Exception('Need  age, sex and year indexes')
     
-            self.index_sets = {}
+            self.index_sets = dict()
             self._begin = None
             self._end   = None
             self._agemin = None
             self._agemax = None
             self._agg = None
             self._nb_type = 0
-            self._types = []
+            self._types = list()
             self.post_init()
 
     def post_init(self):
@@ -54,18 +54,16 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        
         by : str
              Variable which values are kept constant in each group (by variable)
         column : str
-                 Variable wich is summed by group 
+                 Variable which is summed by group 
         pivot : boolean, default False
                 if True returns a pivot_table
         
-        Retruns
+        Returns
         -------
-        
-        a Dataframe 
+        df : a Dataframe
         
         """
         if pivot:
@@ -74,7 +72,8 @@ class Cohorts(DataFrame):
                 a = self[column]
                 a = a.groupby(level = by).sum()
                 return a.unstack()
-        return DataFrame({column : self[column].groupby(level = by).sum()})
+        df = DataFrame({column : self[column].groupby(level = by).sum()})
+        return df 
             
 
     def new_type(self, name ):
@@ -168,14 +167,14 @@ class Cohorts(DataFrame):
         
     def add_agg(self, agg):
         '''
-        Stores aggregates in Cohorte  TODO REMOVEME DEPRECATED
+        Stores aggregates in Cohorte  TODO: REMOVEME DEPRECATED
         '''
         self._agg = agg*1e9
 
     def to_percap(self):
         '''
-        Rescales profiles to per capita amounts of transfers (after projection if it occured)
-        using aggreggates
+        Re-scale profiles to per capita amounts of transfers (after projection if it occurred)
+        using aggregates
         '''
         
         if self._agg is None:
@@ -235,21 +234,17 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        
         typ : str
               Name of the column
-        
         """    
         tmp = self['dsct']*self[typ]*self['pop']
         tmp = tmp.unstack(level = 'year')
-        
         
         # TODO use a loop
 #        for sex in self.index_sets[sex]:
         
         pvm = tmp.xs(0, level='sex')
         pvf = tmp.xs(0, level='sex')
-        
         
         yr_min = array(list(self.index_sets['year'])).min()
         yr_max = array(list(self.index_sets['year'])).max()
@@ -272,9 +267,16 @@ class Cohorts(DataFrame):
 
 
     def pv_percap(self, typ):
-        '''
+        """
         Returns present net value for typ per capita
-        '''
+        
+        Parameters
+        ----------
+        
+        typ : str
+              Column name
+        
+        """
 
         if typ not in self._types:
             raise Exception('cohort: variable %s is not in self._types' %typ)

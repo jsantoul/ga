@@ -45,6 +45,8 @@ class Simulation(object):
         """
         Set population dataframe
         
+        Parameters
+        ----------
         dataframe : pandas DataFrame
                     Dataframe conaining the population
         
@@ -66,7 +68,8 @@ class Simulation(object):
                           name of the table in the hdf5 file
         """
         store_pop = HDFStore(population_filename,'r')
-        self.population = store_pop[population_scenario]
+        dataframe = store_pop[population_scenario]
+        self.set_population(dataframe)
         store_pop.close()
 
 
@@ -96,7 +99,8 @@ class Simulation(object):
         """
         
         store = HDFStore(profiles_filename, 'r')
-        self.profiles = store['profiles']
+        dataframe = store['profiles']
+        self.set_profiles(dataframe)
         
     def create_cohorts(self):
         """
