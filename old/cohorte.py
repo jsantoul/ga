@@ -133,7 +133,7 @@ class Cohorte(DataFrame):
         try: 
             g = self._growth_rate
         except e:
-            print "growth rate is not set ", e 
+            raise "growth rate is not set ", e 
         
         
         try: 
@@ -191,7 +191,7 @@ class Cohorte(DataFrame):
             pvm[yr] += hstack([pvm[yr+1].values[1:], 0])
             pvf[yr] += hstack([pvf[yr+1].values[1:], 0])
         
-        print pvm[yr_max].head()
+        # print pvm[yr_max].head()
         return pvm, pvf
         
 def test_us():    

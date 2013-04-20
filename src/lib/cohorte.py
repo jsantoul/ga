@@ -255,13 +255,13 @@ class Cohorts(DataFrame):
             pvm[yr] += hstack([pvm[yr+1].values[1:], 0])
             pvf[yr] += hstack([pvf[yr+1].values[1:], 0])
             
-        print pvm
+#        print pvm
         pieces = [pvm, pvf]
         res =  concat(pieces, keys = [0,1], names = ["sex"] )
         res = res.stack()
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
-        print res
+#        print res
         res.columns = [typ]
         return res
 
@@ -272,7 +272,6 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        
         typ : str
               Column name
         
@@ -290,7 +289,6 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        
         year_length : int, default None
                       Duration to continue the population projection
         method : str, default None
