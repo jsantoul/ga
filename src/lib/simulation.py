@@ -1,7 +1,7 @@
 '''
 Created on 20 mars 2013
 
-@author: Utilisateur
+@author: benjello
 '''
 
 from pandas import HDFStore
