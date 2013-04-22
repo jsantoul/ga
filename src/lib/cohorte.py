@@ -213,9 +213,10 @@ class Cohorts(DataFrame):
         self['dsct'] = grouped.transform(lambda x: 1/((1+r)**arange(nb_years)))
 
     def proj_tax(self, rate = None, typ = None, method = 'per_capita'):
-        '''
+        """
         Projects taxes either per_capita or globally at the constant growth_rate rate
-        '''
+        TODO: unfinished
+        """
         if rate is None:
             raise Exception('no rate provided using growth_rate')
         
@@ -251,17 +252,14 @@ class Cohorts(DataFrame):
         
 
         for yr in arange(yr_min, yr_max)[::-1]:
-#            print hstack([pvm[yr+1].values[1:], 0])
             pvm[yr] += hstack([pvm[yr+1].values[1:], 0])
             pvf[yr] += hstack([pvf[yr+1].values[1:], 0])
             
-#        print pvm
         pieces = [pvm, pvf]
         res =  concat(pieces, keys = [0,1], names = ["sex"] )
         res = res.stack()
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
-#        print res
         res.columns = [typ]
         return res
 
