@@ -1,3 +1,5 @@
+#.gitignore
+
 *.py[cod]
 *.pyc
 
@@ -31,6 +33,5 @@ nosetests.xml
 # Mr Developer
 .project
 .pydevproject
-
 
 src/countries/france/sources/data_fr/
