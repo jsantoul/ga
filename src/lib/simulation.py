@@ -104,7 +104,7 @@ class Simulation(object):
         
     def create_cohorts(self):
         """
-        Create cohorts according to population, tax and transferts,
+        Create cohorts according to population, tax and transfers,
         and state expenses projection    
         """
         
@@ -115,17 +115,18 @@ class Simulation(object):
         year_length = self.population_projection["year_length"]
         method = self.population_projection["method"]        
         cohorts.prolong_population(year_length, method = method) 
+        
+        # Generate discount factor and growth factor
         cohorts.gen_dsct(self.discount_rate)
         cohorts.gen_grth(self.growth_rate)
+
+        # Fill profiles
         cohorts.fill(self.profiles)
-        
         method = self.tax_projection["method"]
         rate = self.tax_projection["rate"]
-                
         cohorts.proj_tax(rate=rate, method=method)
 
         # Project net taxes TOOD: see MainWindow widget
-        
         self.cohorts = cohorts
         
         
