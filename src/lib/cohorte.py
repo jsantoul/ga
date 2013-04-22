@@ -250,7 +250,6 @@ class Cohorts(DataFrame):
         yr_min = array(list(self.index_sets['year'])).min()
         yr_max = array(list(self.index_sets['year'])).max()
         
-
         for yr in arange(yr_min, yr_max)[::-1]:
             pvm[yr] += hstack([pvm[yr+1].values[1:], 0])
             pvf[yr] += hstack([pvf[yr+1].values[1:], 0])
