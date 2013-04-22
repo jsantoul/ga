@@ -1,5 +1,7 @@
 #.gitignore
 
+.settings\*
+
 *.py[cod]
 *.pyc
 
