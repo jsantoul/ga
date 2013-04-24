@@ -104,16 +104,26 @@ def test_fill_cohort():
     print test_value
     pass
 
+
+def test_actualization():
+    population = create_empty_population_dataframe(2001, 2061)
+    cohorts_test = Cohorts(data = population, columns = ['pop']) 
+    cohorts_test.gen_actualization(cohorts_test, 0.05 , 0.05)
+    test_value = cohorts_test.get_value((0,0,2040), 'actualization')
+    print test_value
+    pass
+
+
 def test_tax_projection():
 
     population = create_empty_population_dataframe(2001, 2061)
-    profiles = create_constant_profiles_dataframe(population, tax = -1, subsidies = 0.5)
     cohorts_test = Cohorts(data = population, columns = ['pop'])
     # TODO: finish this test
-    # r = 0.00
-    g = 0.00 
+    r = 0.05
+    g = 0.05 
     cohorts_test.population_project(200, method = 'stable')
-    cohorts_test.proj_tax(cohorts_test, g, profiles, 'per_capita')
+#     cohorts_test['tax'] = 1
+    cohorts_test.proj_tax(cohorts_test, g, r, 'tax', 'per_capita')
     test_value_tax = cohorts_test.get_value((0,0,2100), 'tax')
     print test_value_tax
 
@@ -180,39 +190,40 @@ def test_column_combination():
     profiles_dataframe['net'] = profiles_dataframe[ ['tax', 'subsidies']].sum() 
     print pop_dataframe['net']
 
-    
-    
-    r = 0.00
-    g = 0.00
-    
-    simulation = Simulation()  
-    simulation.set_population(pop_dataframe)
-    simulation.set_profiles(profiles_dataframe)
-    
-    simulation.set_population_projection(year_length=200, method="constant")
-    simulation.set_tax_projection(rate = g, method="per_capita")
-    
-    simulation.set_growth_rate(g)
-    simulation.set_discount_rate(r)        
-    simulation.create_cohorts()
-        
-    cohorts = simulation.cohorts
-#    print cohorts
-    pv1 =  cohorts.pv_ga("subsidies")
 
-    pv2 =  cohorts.pv_ga("tax")
-    
-    print pv1.get_value((0,0,2007), "subsidies")
-    print pv2.get_value((0,0,2007), "tax")
+#     
+#     r = 0.00
+#     g = 0.00
+#     
+#     simulation = Simulation()  
+#     simulation.set_population(pop_dataframe)
+#     simulation.set_profiles(profiles_dataframe)
+#     
+#     simulation.set_population_projection(year_length=200, method="constant")
+#     simulation.set_tax_projection(rate = g, method="per_capita")
+#     
+#     simulation.set_growth_rate(g)
+#     simulation.set_discount_rate(r)        
+#     simulation.create_cohorts()
+#         
+#     cohorts = simulation.cohorts
+# #    print cohorts
+#     pv1 =  cohorts.pv_ga("subsidies")
+# 
+#     pv2 =  cohorts.pv_ga("tax")
+#     
+#     print pv1.get_value((0,0,2007), "subsidies")
+#     print pv2.get_value((0,0,2007), "tax")
 
 
 
 if __name__ == '__main__':
+    test_1()
 
 
-#     test_population_projection()
-    test_tax_projection()
-
+#     test_population_projection() #dès que j'exécute les trois tests qui suivent, j'ai des erreurs de syntaxes partout. D'où viennent-elles ?
+#     test_tax_projection()
+#     test_actualization()
 #     population_dataframe = create_empty_population_dataframe(2007, 2060)
 #     profiles = create_constant_profiles_dataframe(population_dataframe, tax = -1, subsidies = .5)
 #     print profiles

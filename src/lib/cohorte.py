@@ -211,15 +211,32 @@ class Cohorts(DataFrame):
         grouped = self.groupby(level = ['sex', 'age'])['dsct']
         nb_years = len(self.index_sets['year'])
         self['dsct'] = grouped.transform(lambda x: 1/((1+r)**arange(nb_years)))
+    
+    def gen_actualization(self, arg1 , arg2):
+        """
+        A method to generate a column of actualization coefficients to be used with profiles data
+        
+        Parameters
+        ----------
+        Arg1 : any growth rate 
+        Arg2 : any discount rate (such as interest rate)
+        """
+        self['actualization']= NaN
+        grouped = self.groupby(level = ['sex', 'age'])['actualization']
+        nb_years = len(self.index_sets['year'])
+        self['actualization'] = grouped.transform(lambda x: ((1+ arg1)/(1+ arg2)**arange(nb_years)))        
 
-    def proj_tax(self, rate = None, profile = None, method = None):
+
+    def proj_tax(self, growth_rate = None , discount_rate = None , profile = None, method = None):
         """
         Projects taxes either per_capita or globally at the constant growth_rate rate
         
         Parameters
         ----------        
         rate : Growth rate of the economy
-        profile : the profile data frame to include in the cohort and expand
+        profile : the type of data which has to be expanded.
+            The cohort should have one column for the population and at least one other column (the profile)
+            which will be expanded
         method : the method used for the projection 
             the name has to be either 'per_capita' or 'aggregate'
         """
@@ -231,17 +248,25 @@ class Cohorts(DataFrame):
         -> What kind of info the cohort must contain to be used with the method ?
         The profile dataframe the tax or should the tax profile be specified in the arguments ?
         """  
-        if profile not in self.columns:
-            raise Exception('this %s is not a column of cohort') %(profile)
+        if growth_rate is None:
+            raise Exception('no growth_rate provided')
+        if discount_rate is None:
+            raise Exception('no discount_rate provided')
         if method is None:
             raise Exception('a method should be specified')
-        
-        if method == 'per_capita':
-#             TODO: create a column 'growth' values are : (1+g)*elapsed_year. 
-#             Fill the 'typ' column with the value at the initial year (ask about behaviour of this)
-#             see later to fix if given value is not initial year
-#             Finally multiply the column 'typ' with the column 'growth'
-            pass
+        if profile is None:
+            for typ in self._types:
+                self.proj_tax(growth_rate , discount_rate , typ, method)
+        if profile not in self.columns:
+            raise Exception('this %s is not a column of cohort') %(profile)
+        else:
+            if method == 'per_capita':
+                self.gen_actualization(self, growth_rate , discount_rate)
+                for typ in profile:
+                    if typ is not 'grth':
+                        self[typ] = self[typ]*self['grth']
+            else:
+                NotImplementedError
 #             last_pop = self.xs(last_year, level='year', axis=0)
 #             pop = DataFrame(self['pop'])
 #             years = range(last_year+1,new_last_year+1)
@@ -252,23 +277,6 @@ class Cohorts(DataFrame):
 #             combined = self.combine_first(pop)
 #             self.__init__(data = combined, columns = ['pop'])
 
-        if rate is None:
-            raise Exception('no rate provided using growth_rate')
-        
-        if method is None:
-            raise Exception('a method should be specified')       
-        elif method == 'per_capita':
-            #Step 1 : creating 1 column for elapsed years
-            self.new_type(self, 'elapsed_year' )
-            years = self.index_sets['year'] 
-            first_year = min(years)
-            last_year = max(years)
-            self['elapsed_year']=range(last_year - first_year-1) #TODO:check if there is a minus one
-            #Step 2 expand the 'typ' column and combine with the actualisation
-            self.fill(self, profile, year = None)
-            #note : make sure that the method do not screw up the population column
-            for col_name in profile.columns:
-                self[col_name] = self[col_name]*(1+rate)**self.elapsed_year
 #             last_pop = self.xs(last_year, level='year', axis=0)
 #             pop = DataFrame(self['pop'])
 #             years = range(last_year+1,new_last_year+1)
@@ -279,15 +287,6 @@ class Cohorts(DataFrame):
 #             combined = self.combine_first(pop)
 #             self.__init__(data = combined, columns = ['pop'])
 
-# Does this loop have a particular use ?        
-#         if profile is None:
-#             for typ in self._types:
-#                 self.proj_tax(rate, typ, method)
-#         else:
-#             if method == 'per_capita':
-#                 self[typ] = self[typ]*self['grth']
-#             else:
-#                 NotImplementedError
                 
     def pv_ga(self, typ):
         """
