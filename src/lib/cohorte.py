@@ -212,27 +212,46 @@ class Cohorts(DataFrame):
         nb_years = len(self.index_sets['year'])
         self['dsct'] = grouped.transform(lambda x: 1/((1+r)**arange(nb_years)))
 
-    def proj_tax(self, rate = None, profile=None, method = None):
+    def proj_tax(self, rate = None, profile = None, method = None):
         """
         Projects taxes either per_capita or globally at the constant growth_rate rate
         
         Parameters
-        ----------
-        
+        ----------        
         rate : Growth rate of the economy
-        
         profile : the profile data frame to include in the cohort and expand
-
         method : the method used for the projection 
             the name has to be either 'per_capita' or 'aggregate'
-        
         """
         
         """
         Questions about this method :
+        -> When is this method supposed to be used ? Before or after pop projection ?
+        
         -> What kind of info the cohort must contain to be used with the method ?
         The profile dataframe the tax or should the tax profile be specified in the arguments ?
         """  
+        if profile not in self.columns:
+            raise Exception('this %s is not a column of cohort') %(profile)
+        if method is None:
+            raise Exception('a method should be specified')
+        
+        if method == 'per_capita':
+#             TODO: create a column 'growth' values are : (1+g)*elapsed_year. 
+#             Fill the 'typ' column with the value at the initial year (ask about behaviour of this)
+#             see later to fix if given value is not initial year
+#             Finally multiply the column 'typ' with the column 'growth'
+            pass
+#             last_pop = self.xs(last_year, level='year', axis=0)
+#             pop = DataFrame(self['pop'])
+#             years = range(last_year+1,new_last_year+1)
+#             list_df = [last_pop] * len(years)
+#  
+#             pop = concat(list_df, keys = years, names =['year'])
+#             pop = pop.reorder_levels(['age','sex','year'], axis=0)
+#             combined = self.combine_first(pop)
+#             self.__init__(data = combined, columns = ['pop'])
+
         if rate is None:
             raise Exception('no rate provided using growth_rate')
         

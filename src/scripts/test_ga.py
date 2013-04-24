@@ -55,7 +55,6 @@ def test_empty_frame_generation():
     assert test_value == 1
          
 
-
 def test_population_projection():
     # On cohorts
 
@@ -64,9 +63,9 @@ def test_population_projection():
     cohorts = Cohorts(data = population, columns = ['pop'])
 
     # Complete population projection
-    year_length =  200
-    methoD      =  'stable'   
-    cohorts.population_project(year_length, method = methoD)
+    year_length = 200
+    method = 'stable'   
+    cohorts.population_project(year_length, method = method)
     test_value = cohorts.get_value((0,0,2161), "pop")
     print test_value
     assert test_value == 1
@@ -171,6 +170,7 @@ def test_1():
 
 def test_column_combination():
     year_start = 2001
+
     pop_dataframe = create_empty_population_dataframe(year_start, 2061)
     print pop_dataframe
     profiles_dataframe = pop_dataframe[pop_dataframe.year==year_start ]
@@ -209,8 +209,10 @@ def test_column_combination():
 
 if __name__ == '__main__':
 
+
 #     test_population_projection()
     test_tax_projection()
+
 #     population_dataframe = create_empty_population_dataframe(2007, 2060)
 #     profiles = create_constant_profiles_dataframe(population_dataframe, tax = -1, subsidies = .5)
 #     print profiles
