@@ -246,7 +246,7 @@ class MainWindow(QMainWindow):
         # Prolongation of population scenario
         
         method = self._param_widget.population_prolong
-        cohorts.prolong_population(year_length, method = method)
+        cohorts.prolong_population(year_length, method = method) #TODO: check if prolong_population name is still relevant
         cohorts.fill(profiles)
         
         cohorts.gen_dsct(r)
