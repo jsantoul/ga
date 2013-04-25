@@ -10,6 +10,11 @@ import nose
 from pandas import DataFrame, merge
 from src.lib.simulation import Simulation
 from src.lib.cohorte import Cohorts
+from numpy import arange
+
+#===============================================================================
+# Some test function to generate fake data
+#===============================================================================
 
 def create_empty_population_dataframe(year_start, year_end):
     # Building population and profiles dataframes 
@@ -27,6 +32,33 @@ def create_empty_population_dataframe(year_start, year_end):
     df2 = merge(df, df_year,on='key')[['age', 'sex','year']]
     population_dataframe = df2.set_index(['age', 'sex','year'])
     population_dataframe['pop'] = 1
+    return population_dataframe
+
+def create_testing_population_dataframe(year_start, year_end, rate = None):
+    
+    if rate is None:       
+        population_dataframe = create_empty_population_dataframe(year_start, year_end)
+    else:
+        population_dataframe = create_empty_population_dataframe(year_start, year_end)
+#         created classic dataframe with constant population, now updating with growth 
+      
+        population_dataframe['grth'] = 1
+        grouped = population_dataframe.groupby(level = ['sex', 'age'])['grth']
+        nb_years = year_end-year_start
+        print population_dataframe
+        population_dataframe['grth'] = grouped.transform(lambda x: (1+rate)**(arange(nb_years)))
+        population_dataframe['pop'] = population_dataframe['pop']*population_dataframe['grth']
+        population_dataframe.drop(['grth'], axis=1)
+        #=======================================================================
+        # self-testing part of the function
+        #=======================================================================
+        
+#         test_value1 = population_dataframe.get_value((0,1,2011), 'pop')
+#         print test_value1
+#         assert test_value1 == 1024
+        
+        
+    print population_dataframe.get_value((0,1,2010), 'pop')
     return population_dataframe
 
 def create_constant_profiles_dataframe(population_dataframe, **kwargs):
@@ -54,12 +86,13 @@ def test_empty_frame_generation():
     test_value = population_dataframe.get_value((0,0,2043), "pop")
     assert test_value == 1
          
+#===============================================================================
+# Some tests of the object Cohorts
+#===============================================================================
 
 def test_population_projection():
-    # On cohorts
-
+    # Create cohorts
     population = create_empty_population_dataframe(2001, 2061)
-#    profiles = create_constant_profiles_dataframe(population_dataframe, tax = -1, subsidies = .5)
     cohorts = Cohorts(data = population, columns = ['pop'])
 
     # Complete population projection
@@ -95,44 +128,95 @@ def test_population_projection():
 #     test_value = simulation.cohorts.get_value((0,0,2100),"tax")
 #     assert test_value == 1    
 #     pass
+
+def test_column_combination():
+    year_start = 2001
+
+    pop_dataframe = create_empty_population_dataframe(year_start, 2061)
+    print pop_dataframe
+    profiles_dataframe = create_constant_profiles_dataframe(pop_dataframe, tax=-1.0, sub=0.5)
+    print profiles_dataframe
+    profiles_dataframe['net'] = profiles_dataframe.sum(axis=1) 
+    print profiles_dataframe['net']
+
+
+
 def test_fill_cohort():   
     population = create_empty_population_dataframe(2001, 2061)
     profiles = create_constant_profiles_dataframe(population, tax = -1, subsidies = 0.5)
     cohorts_test = Cohorts(data = population, columns = ['pop'])
-    cohorts_test.fill(cohorts_test, profiles, year = None)
-    test_value = cohorts_test.get_value((0,0,2100), 'tax')
+    cohorts_test.fill(profiles, year = None)
+    test_value = cohorts_test.get_value((0,0,2060), 'tax')
     print test_value
     pass
 
 
-def test_actualization():
+def test_dsct():
     population = create_empty_population_dataframe(2001, 2061)
-    cohorts_test = Cohorts(data = population, columns = ['pop']) 
-    cohorts_test.gen_actualization(cohorts_test, 0.05 , 0.05)
-    test_value = cohorts_test.get_value((0,0,2040), 'actualization')
+    cohorts = Cohorts(data = population, columns = ['pop']) 
+    cohorts.gen_dsct(0.05)
+    test_value = cohorts.get_value((0,0,2060), 'dsct')
     print test_value
+    assert test_value <= 1
     pass
 
 
 def test_tax_projection():
 
     population = create_empty_population_dataframe(2001, 2061)
-    cohorts_test = Cohorts(data = population, columns = ['pop'])
-    # TODO: finish this test
-    r = 0.05
-    g = 0.05 
-    cohorts_test.population_project(200, method = 'stable')
-#     cohorts_test['tax'] = 1
-    cohorts_test.proj_tax(cohorts_test, g, r, 'tax', 'per_capita')
-    test_value_tax = cohorts_test.get_value((0,0,2100), 'tax')
-    print test_value_tax
+    profile = create_constant_profiles_dataframe(population, tax = -1, sub=0.5) 
+    g = 0.05
+    r = 0
+    cohort = Cohorts(population)
+    cohort.fill(profile)
+    typ = 'tax'
+    cohort.proj_tax(g, r, typ,  method = 'per_capita')
+    print cohort
+    test_value = cohort.get_value((0,1,2002), 'tax')
+    test_value2 = cohort.get_value((0,1,2002), 'sub')
+    print test_value, test_value2
+    if typ is None:
+        assert test_value2 > 0.5 and test_value < -1
+        return
+    elif 'sub' in typ:
+        assert test_value2 > 0.5
+        if 'tax' in typ: 
+            assert test_value < -1
+    elif 'tax' in typ:
+        assert test_value < -1
+    
+def test_tax_projection_aggregated():
+    population = create_testing_population_dataframe(2001, 2061, 1)
+    profile = create_constant_profiles_dataframe(population, tax = -1, sub=0.5)
+    g = 0.0
+    r = 0.0 
+    cohort = Cohorts(population)
+    cohort.fill(profile)
+    typ = None
+    cohort.proj_tax(g, r, typ,  method = 'aggregate')
+    test_value = cohort.get_value((0,1,2011), 'tax')
+    test_value2 = cohort.get_value((0,1,2011), 'sub')
+    print test_value, test_value2
+#     if typ is None:
+#         assert test_value2 > 0.5 and test_value < -1
+#         return
+#     elif 'sub' in typ:
+#         assert test_value2 > 0.5
+#         if 'tax' in typ: 
+#             assert test_value < -1
+#     elif 'tax' in typ:
+#         assert test_value < -1  
+    pass
 
-    assert test_value_tax == 1
 
 def test_pv_ga():
     pass
 
 
+
+#===============================================================================
+# Testing the simulation object construction plus population and tax projection.
+#===============================================================================
 def test_1():
 
     # Building population and profiles dataframes 
@@ -151,7 +235,8 @@ def test_1():
     population_dataframe = df2.set_index(['age', 'sex','year'])
     population_dataframe['pop'] = 1
 
-    profiles_dataframe = df2[df2.year==2007 ]
+    profiles_dataframe = df2[df2.year==2001 ]
+
     profiles_dataframe["tax"] = 1 
 
     profiles_dataframe = profiles_dataframe.set_index(['age', 'sex','year'])
@@ -163,13 +248,16 @@ def test_1():
     simulation.set_profiles(profiles_dataframe)
     simulation.set_population_projection(year_length=200, method="constant")
     
-    simulation.set_tax_projection(rate = g, method="per_capita")
+#    simulation.set_tax_projection(rate = g, method="per_capita")
+    simulation.set_tax_projection(rate = g, method="aggregate")
+    
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r)        
     simulation.create_cohorts()
     
     cohorts = simulation.cohorts
-    pv =  cohorts.pv_ga("tax")
+    pv =  cohorts.aggregate_generation_present_value("tax")
+    print cohorts._types_years
 #    print 'pv'
 #    print pv
     
@@ -178,58 +266,27 @@ def test_1():
     assert  pv.get_value((0,0,2007), "tax") == 54
     assert  pv.get_value((0,0,2008), "tax") == 53
 
-def test_column_combination():
-    year_start = 2001
-
-    pop_dataframe = create_empty_population_dataframe(year_start, 2061)
-    print pop_dataframe
-    profiles_dataframe = pop_dataframe[pop_dataframe.year==year_start ]
-    profiles_dataframe["tax"] = 1 
-    profiles_dataframe["subsidies"] = 0.5
-    profiles_dataframe = profiles_dataframe.set_index(['age', 'sex','year'])
-    profiles_dataframe['net'] = profiles_dataframe[ ['tax', 'subsidies']].sum() 
-    print pop_dataframe['net']
-
-
-#     
-#     r = 0.00
-#     g = 0.00
-#     
-#     simulation = Simulation()  
-#     simulation.set_population(pop_dataframe)
-#     simulation.set_profiles(profiles_dataframe)
-#     
-#     simulation.set_population_projection(year_length=200, method="constant")
-#     simulation.set_tax_projection(rate = g, method="per_capita")
-#     
-#     simulation.set_growth_rate(g)
-#     simulation.set_discount_rate(r)        
-#     simulation.create_cohorts()
-#         
-#     cohorts = simulation.cohorts
-# #    print cohorts
-#     pv1 =  cohorts.pv_ga("subsidies")
-# 
-#     pv2 =  cohorts.pv_ga("tax")
-#     
-#     print pv1.get_value((0,0,2007), "subsidies")
-#     print pv2.get_value((0,0,2007), "tax")
-
 
 
 if __name__ == '__main__':
-    test_1()
+#     test_1()
 
-
-#     test_population_projection() #dès que j'exécute les trois tests qui suivent, j'ai des erreurs de syntaxes partout. D'où viennent-elles ?
-#     test_tax_projection()
-#     test_actualization()
+#     create_testing_population_dataframe(2001, 2061, 1)
+#     test_population_projection() 
+#     test_tax_projection() #Now working flawlessly
+    #===========================================================================
+    # test_tax_projection_aggregated() #Not working as intended : 
+    # pop growth of 100% with no economic growth leads to 100% per_capita tax growth each period 
+    # instead of halving per_capita tax each period 
+    #===========================================================================
+#     test_fill_cohort() #Working
+#     test_dsct() #Working
 #     population_dataframe = create_empty_population_dataframe(2007, 2060)
 #     profiles = create_constant_profiles_dataframe(population_dataframe, tax = -1, subsidies = .5)
 #     print profiles
 #    test_empty_frame_generation()
 #    test_population_projection()
-#    test_column_combination()
-#    nose.core.runmodule(argv=[__file__])
-#    nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'],
-#                   exit=False)
+#     test_column_combination() #Working
+#     nose.core.runmodule(argv=[__file__])
+#     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'],
+#                    exit=False)
