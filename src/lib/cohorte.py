@@ -33,6 +33,8 @@ class Cohorts(DataFrame):
             self._agg = None
             self._nb_type = 0
             self._types = list()
+            self._types_years = dict()   # TODO: merge this dict with the previous list
+            
             self.post_init()
 
     def post_init(self):
@@ -125,7 +127,7 @@ class Cohorts(DataFrame):
                 
     def fill(self, df, year = None):
         """
-        Takes an age, sex profile (per capita transfers) 
+        Takes age, sex profile (per capita transfers) found in df
         to fill year 'year' or all years if year is None
         
         Parameters
@@ -144,13 +146,21 @@ class Cohorts(DataFrame):
         for col_name in df.columns:
             if col_name not in self._types:
                 self.new_type(col_name)
+                typ = col_name
+                tmp = df[typ]
+                tmp = tmp.unstack(level="year")
+                tmp = tmp.dropna(axis=1, how="all")
+                self._types_years[typ] = tmp.columns
+                
+            else:
+                raise Exception("column already exists")
         
-        if year is None:          
+        if year is None:
             df_insert = df.reset_index(level='year', drop=True)
             years = sorted(self.index_sets['year'])
             list_df = [df_insert] * len(years)
             df_tot = concat(list_df, keys = years, names =['year'])
-            df_tot = df_tot.reorder_levels(['age','sex','year'], axis=0) 
+            df_tot = df_tot.reorder_levels(['age','sex','year'], axis=0)
             
         else:
             yr = year
@@ -229,25 +239,21 @@ class Cohorts(DataFrame):
 
     def proj_tax(self, rate = None , discount_rate = None , typ = None, method = None):
         """
-        Projects taxes either per_capita or globally at the constant growth_rate rate
+        Projects taxes either per_capita or aggregate at the constant growth_rate rate
         
         Parameters
         ----------        
-        rate : Growth rate of the economy
-        profile : the type of data which has to be expanded.
+        rate : float,
+            Growth rate of the economy
+        discount_rate : float
+        typ : the type of data which has to be expanded.
             The cohort should have one column for the population and at least one other column (the profile)
             which will be expanded
-        method : the method used for the projection 
+        method : str
+            the method used for the projection 
             the name has to be either 'per_capita' or 'aggregate'
         """
         
-        """
-        Questions about this method :
-        -> When is this method supposed to be used ? Before or after pop projection ?
-        
-        -> What kind of info the cohort must contain to be used with the method ?
-        The profile dataframe the tax or should the tax profile be specified in the arguments ?
-        """  
         if rate is None:
             raise Exception('no growth_rate provided')
         if discount_rate is None:
@@ -257,62 +263,62 @@ class Cohorts(DataFrame):
             raise Exception('a method should be specified')
         if typ is None:
             for typ in self._types:
-                print typ
                 self.proj_tax(rate , discount_rate , typ, method)
             return
         if typ not in self.columns:
             raise Exception('this is not a column of cohort')
         else:
-            if method == 'per_capita':
-                self.gen_grth(rate)
+            self.gen_grth(rate)
+            if method == "per_capita":
                 self[typ] = self[typ]*self['grth']
+                
+            if method == "aggregate":
+                typ_years = self._types_years[typ]
+                last_typ_year = max(typ_years)         
+                last_typ_pop = self.xs(last_typ_year, level='year', axis=0)  
+                years = self.index_sets['year']
+                last_year = max(years)
+                proj_years = range(last_typ_year, last_year+1)
+                print last_typ_year, last_year
+                list_pop_df = [last_typ_pop] * len(proj_years)
+                frozen_pop = concat(list_pop_df, keys = years, names =['year'])
+                frozen_pop = frozen_pop.reorder_levels(['age','sex','year'], axis=0)
+                print "frozen pop"
+                print frozen_pop
+                
+                self[typ] = self[typ]*self['grth']*self["pop"]/frozen_pop["pop"]
+                print self
             else:
                 NotImplementedError
-#             last_pop = self.xs(last_year, level='year', axis=0)
-#             pop = DataFrame(self['pop'])
-#             years = range(last_year+1,new_last_year+1)
-#             list_df = [last_pop] * len(years)
-#  
-#             pop = concat(list_df, keys = years, names =['year'])
-#             pop = pop.reorder_levels(['age','sex','year'], axis=0)
-#             combined = self.combine_first(pop)
-#             self.__init__(data = combined, columns = ['pop'])
 
-#             last_pop = self.xs(last_year, level='year', axis=0)
-#             pop = DataFrame(self['pop'])
-#             years = range(last_year+1,new_last_year+1)
-#             list_df = [last_pop] * len(years)
-#  
-#             pop = concat(list_df, keys = years, names =['year'])
-#             pop = pop.reorder_levels(['age','sex','year'], axis=0)
-#             combined = self.combine_first(pop)
-#             self.__init__(data = combined, columns = ['pop'])
 
                 
-    def pv_ga(self, typ):
+    def aggregate_generation_present_value(self, typ):
         """
         Computes the present value of one column for the whole generation
         
         Parameters
         ----------
         typ : str
-              Name of the column
-        """    
-        tmp = self['dsct']*self[typ]*self['pop']
-        tmp = tmp.unstack(level = 'year')
+              Name of the column of the per capita profile of tax or transfer
+        """
         
+        # TODO: test if self['dsct'] exists
+        
+        tmp = self['dsct']*self[typ]*self['pop']
+        tmp = tmp.unstack(level = 'year')  # untack year indices to columns
         # TODO use a loop
 #        for sex in self.index_sets[sex]:
         
         pvm = tmp.xs(0, level='sex')
-        pvf = tmp.xs(0, level='sex')
+        pvf = tmp.xs(1, level='sex') #Assuming 1 is the index for females resp. 0 is male.
         
         yr_min = array(list(self.index_sets['year'])).min()
         yr_max = array(list(self.index_sets['year'])).max()
         
         for yr in arange(yr_min, yr_max)[::-1]:
-            pvm[yr] += hstack([pvm[yr+1].values[1:], 0])
-            pvf[yr] += hstack([pvf[yr+1].values[1:], 0])
+            pvm[yr] += hstack( [ pvm[yr+1].values[1:], 0]  )
+            pvf[yr] += hstack( [ pvf[yr+1].values[1:], 0]  )
             
         pieces = [pvm, pvf]
         res =  concat(pieces, keys = [0,1], names = ["sex"] )
@@ -323,7 +329,7 @@ class Cohorts(DataFrame):
         return res
 
 
-    def pv_percap(self, typ):
+    def per_capita_generation_present_value(self, typ):
         """
         Returns present net value for typ per capita
         
@@ -407,6 +413,14 @@ class Cohorts(DataFrame):
         self.__init__(data = stacked, columns = ['pop'])
 
 
+    def get_unknown_years(self, typ):
+        """
+        
+        """
+        cohorts_years = range(self._first_year, self._last_year+1)
+        
+        profile = self._profiles_years[typ]
+        
         
 def test_us():    
     ############################################"
