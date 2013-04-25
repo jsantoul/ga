@@ -164,7 +164,7 @@ class Simulation(object):
         ----------
         
         method : str
-                 method use to project taxes
+                 method use to project population
         """
         if self.population_projection is None:
             self.population_projection = dict()

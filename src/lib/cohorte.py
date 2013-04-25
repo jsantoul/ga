@@ -227,7 +227,7 @@ class Cohorts(DataFrame):
         self['actualization'] = grouped.transform(lambda x: ((1+ arg1)/(1+ arg2)**arange(nb_years)))        
 
 
-    def proj_tax(self, growth_rate = None , discount_rate = None , profile = None, method = None):
+    def proj_tax(self, rate = None , discount_rate = None , typ = None, method = None):
         """
         Projects taxes either per_capita or globally at the constant growth_rate rate
         
@@ -248,23 +248,24 @@ class Cohorts(DataFrame):
         -> What kind of info the cohort must contain to be used with the method ?
         The profile dataframe the tax or should the tax profile be specified in the arguments ?
         """  
-        if growth_rate is None:
+        if rate is None:
             raise Exception('no growth_rate provided')
         if discount_rate is None:
-            raise Exception('no discount_rate provided')
+            self.proj_tax(rate , 0 , typ, method)
+            return
         if method is None:
             raise Exception('a method should be specified')
-        if profile is None:
+        if typ is None:
             for typ in self._types:
-                self.proj_tax(growth_rate , discount_rate , typ, method)
-        if profile not in self.columns:
-            raise Exception('this %s is not a column of cohort') %(profile)
+                print typ
+                self.proj_tax(rate , discount_rate , typ, method)
+            return
+        if typ not in self.columns:
+            raise Exception('this is not a column of cohort')
         else:
             if method == 'per_capita':
-                self.gen_actualization(self, growth_rate , discount_rate)
-                for typ in profile:
-                    if typ is not 'grth':
-                        self[typ] = self[typ]*self['grth']
+                self.gen_grth(rate)
+                self[typ] = self[typ]*self['grth']
             else:
                 NotImplementedError
 #             last_pop = self.xs(last_year, level='year', axis=0)
@@ -348,9 +349,9 @@ class Cohorts(DataFrame):
         year_length : int, default None
                       Duration to continue the population projection
         method : str, default None
-                 A value that must be 'stable' or is required.  
+                 A value that must be 'stable' or 'TODO: add other protocols' is required.  
         """
-        
+#        For the other projection method, I see exponential growth at constant rate
         if 'pop' not in self.columns:
             raise Exception('pop is not a column of cohort')
         if year_length is None:
@@ -377,6 +378,22 @@ class Cohorts(DataFrame):
             pop = pop.reorder_levels(['age','sex','year'], axis=0)
             combined = self.combine_first(pop)
             self.__init__(data = combined, columns = ['pop'])
+            
+
+        if method == 'exp_growth':
+#             TODO : finish this projection method. Add an argument, add checkpoint if growth rate is None
+#             find efficient way to do the growth operation
+            last_pop = self.xs(last_year, level='year', axis=0)
+            pop = DataFrame(self['pop'])
+            years = range(last_year+1,new_last_year+1)
+#             self['dsct'] = grouped.transform(lambda x: 1/((1+r)**arange(nb_years)))
+            list_df = [last_pop] * len(years) 
+
+            pop = concat(list_df, keys = years, names =['year'])
+            pop = pop.reorder_levels(['age','sex','year'], axis=0)
+            combined = self.combine_first(pop)
+            self.__init__(data = combined, columns = ['pop'])
+            pass
 
     
     def set_population_from_csv(self, datafile):
