@@ -4,9 +4,10 @@ Created on 26 avr. 2013
 
 @author: Mahdi Ben Jelloul
 '''
-import nose
+
 from pandas import DataFrame, merge
 from numpy import arange
+
 
 #===============================================================================
 # Some test function to generate fake data
@@ -30,9 +31,15 @@ def create_empty_population_dataframe(year_start, year_end):
     population_dataframe['pop'] = 1
     return population_dataframe
 
-# @nottest(create_testing_population_dataframe()) #How do I use this attrib correctly ?
-def create_testing_population_dataframe(year_start, year_end, rate = None):
-    
+#How do I use this attrib correctly ?
+def create_testing_population_dataframe(year_start = None, year_end = None, rate = None):
+    """
+    """
+    if year_start is None or year_end is None:
+        #raise Exception("year_start and year_end are both required arguments")
+        print "year_start and year_end are both required arguments"
+        return
+        
     if rate is None:       
         population_dataframe = create_empty_population_dataframe(year_start, year_end)
     else:
@@ -42,20 +49,10 @@ def create_testing_population_dataframe(year_start, year_end, rate = None):
         population_dataframe['grth'] = 1
         grouped = population_dataframe.groupby(level = ['sex', 'age'])['grth']
         nb_years = year_end-year_start
-        print population_dataframe
         population_dataframe['grth'] = grouped.transform(lambda x: (1+rate)**(arange(nb_years)))
         population_dataframe['pop'] = population_dataframe['pop']*population_dataframe['grth']
         del population_dataframe['grth']
-        #=======================================================================
-        # self-testing part of the function
-        #=======================================================================
-        
-#         test_value1 = population_dataframe.get_value((0,1,2011), 'pop')
-#         print test_value1
-#         assert test_value1 == 1024
-        
-        
-#     print population_dataframe
+
     return population_dataframe
 
 def create_constant_profiles_dataframe(population_dataframe, **kwargs):
