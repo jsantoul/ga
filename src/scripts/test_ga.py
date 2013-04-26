@@ -45,7 +45,7 @@ def create_testing_population_dataframe(year_start, year_end, rate = None):
         population_dataframe['grth'] = 1
         grouped = population_dataframe.groupby(level = ['sex', 'age'])['grth']
         nb_years = year_end-year_start
-        print population_dataframe
+#        print population_dataframe
         population_dataframe['grth'] = grouped.transform(lambda x: (1+rate)**(arange(nb_years)))
         population_dataframe['pop'] = population_dataframe['pop']*population_dataframe['grth']
         population_dataframe.drop(['grth'], axis=1)
@@ -58,7 +58,7 @@ def create_testing_population_dataframe(year_start, year_end, rate = None):
 #         assert test_value1 == 1024
         
         
-    print population_dataframe.get_value((0,1,2010), 'pop')
+#    print population_dataframe.get_value((0,1,2010), 'pop')
     return population_dataframe
 
 def create_constant_profiles_dataframe(population_dataframe, **kwargs):
@@ -100,7 +100,7 @@ def test_population_projection():
     method = 'stable'   
     cohorts.population_project(year_length, method = method)
     test_value = cohorts.get_value((0,0,2161), "pop")
-    print test_value
+#    print test_value
     assert test_value == 1
 
 #     print population_dataframe.head()
@@ -138,7 +138,7 @@ def test_column_combination():
     print profiles_dataframe
     profiles_dataframe['net'] = profiles_dataframe.sum(axis=1) 
     print profiles_dataframe['net']
-
+    # TODO: needs an assert
 
 
 def test_fill_cohort():   
@@ -148,7 +148,7 @@ def test_fill_cohort():
     cohorts_test.fill(profiles, year = None)
     test_value = cohorts_test.get_value((0,0,2060), 'tax')
     print test_value
-    pass
+    # TODO: needs an assert
 
 
 def test_dsct():
@@ -156,11 +156,9 @@ def test_dsct():
     cohorts = Cohorts(data = population, columns = ['pop']) 
     cohorts.gen_dsct(0.05)
     test_value = cohorts.get_value((0,0,2060), 'dsct')
-    print test_value
+#    print test_value
     assert test_value <= 1
-    pass
-
-
+    
 def test_tax_projection():
 
     population = create_empty_population_dataframe(2001, 2061)
@@ -171,10 +169,11 @@ def test_tax_projection():
     cohort.fill(profile)
     typ = 'tax'
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
-    print cohort
+#    print cohort
     test_value = cohort.get_value((0,1,2002), 'tax')
     test_value2 = cohort.get_value((0,1,2002), 'sub')
-    print test_value, test_value2
+#    print test_value, test_value2
+    # TODO: I don't understand the following
     if typ is None:
         assert test_value2 > 0.5 and test_value < -1
         return
@@ -195,8 +194,8 @@ def test_tax_projection_aggregated():
     cohort.fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'aggregate')
-    test_value = cohort.get_value((0,1,2011), 'tax')
-    test_value2 = cohort.get_value((0,1,2011), 'sub')
+    test_value = cohort.get_value((0,1,2002), 'tax')
+    test_value2 = cohort.get_value((0,1,2002), 'sub')
     print test_value, test_value2
 #     if typ is None:
 #         assert test_value2 > 0.5 and test_value < -1
@@ -270,14 +269,25 @@ def test_1():
 
 
 if __name__ == '__main__':
-#     test_1()
 
+<<<<<<< HEAD
 #     create_testing_population_dataframe(2001, 2061, 1)
 #     test_population_projection() 
 #     test_tax_projection() #Now working flawlessly
     test_tax_projection_aggregated() #Not working as intended : 
 #     pop growth of 100% with no economic growth leads to 100% per_capita tax growth each period 
 #     instead of halving per_capita tax each period 
+=======
+#    test_1()
+#    create_testing_population_dataframe(2001, 2061, 1)
+#    test_population_projection() 
+#    test_tax_projection() #Now working flawlessly
+    #===========================================================================
+    test_tax_projection_aggregated() #Not working as intended : 
+    # pop growth of 100% with no economic growth leads to 100% per_capita tax growth each period 
+    # instead of halving per_capita tax each period 
+    #===========================================================================
+>>>>>>> 2ed8ad98140cd41ca8b57237cfc6919f52224d54
 #     test_fill_cohort() #Working
 #     test_dsct() #Working
 #     population_dataframe = create_empty_population_dataframe(2007, 2060)
@@ -286,6 +296,7 @@ if __name__ == '__main__':
 #    test_empty_frame_generation()
 #    test_population_projection()
 #     test_column_combination() #Working
-#     nose.core.runmodule(argv=[__file__])
-#     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'],
+#    nose.core.runmodule(argv=[__file__])
+#    nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'],
 #                    exit=False)
+
