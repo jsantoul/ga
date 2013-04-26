@@ -187,6 +187,7 @@ def test_tax_projection():
     
 def test_tax_projection_aggregated():
     population = create_testing_population_dataframe(2001, 2061, 1)
+    print population.get_value((0,0,2011), 'pop')
     profile = create_constant_profiles_dataframe(population, tax = -1, sub=0.5)
     g = 0.0
     r = 0.0 
@@ -274,11 +275,9 @@ if __name__ == '__main__':
 #     create_testing_population_dataframe(2001, 2061, 1)
 #     test_population_projection() 
 #     test_tax_projection() #Now working flawlessly
-    #===========================================================================
-    # test_tax_projection_aggregated() #Not working as intended : 
-    # pop growth of 100% with no economic growth leads to 100% per_capita tax growth each period 
-    # instead of halving per_capita tax each period 
-    #===========================================================================
+    test_tax_projection_aggregated() #Not working as intended : 
+#     pop growth of 100% with no economic growth leads to 100% per_capita tax growth each period 
+#     instead of halving per_capita tax each period 
 #     test_fill_cohort() #Working
 #     test_dsct() #Working
 #     population_dataframe = create_empty_population_dataframe(2007, 2060)
