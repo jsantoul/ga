@@ -16,4 +16,5 @@ encoding//src/plugins/general/configdialog.py=utf-8
 encoding//src/scripts/example.py=utf-8
 encoding//src/scripts/old_test.py=utf-8
 encoding//src/scripts/test_ga.py=utf-8
+encoding//src/scripts/tests/utils.py=utf-8
 encoding//src/widgets/MainWindow.py=utf-8

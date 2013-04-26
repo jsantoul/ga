@@ -4,10 +4,8 @@ Created on 26 avr. 2013
 
 @author: Mahdi Ben Jelloul
 '''
-
+import nose
 from pandas import DataFrame, merge
-from src.lib.simulation import Simulation
-from src.lib.cohorte import Cohorts
 from numpy import arange
 
 #===============================================================================
@@ -32,6 +30,7 @@ def create_empty_population_dataframe(year_start, year_end):
     population_dataframe['pop'] = 1
     return population_dataframe
 
+# @nottest(create_testing_population_dataframe()) #How do I use this attrib correctly ?
 def create_testing_population_dataframe(year_start, year_end, rate = None):
     
     if rate is None:       
@@ -46,7 +45,7 @@ def create_testing_population_dataframe(year_start, year_end, rate = None):
         print population_dataframe
         population_dataframe['grth'] = grouped.transform(lambda x: (1+rate)**(arange(nb_years)))
         population_dataframe['pop'] = population_dataframe['pop']*population_dataframe['grth']
-        population_dataframe.drop(['grth'], axis=1)
+        del population_dataframe['grth']
         #=======================================================================
         # self-testing part of the function
         #=======================================================================
@@ -56,7 +55,7 @@ def create_testing_population_dataframe(year_start, year_end, rate = None):
 #         assert test_value1 == 1024
         
         
-    print population_dataframe.get_value((0,1,2010), 'pop')
+#     print population_dataframe
     return population_dataframe
 
 def create_constant_profiles_dataframe(population_dataframe, **kwargs):
