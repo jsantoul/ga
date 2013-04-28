@@ -82,9 +82,8 @@ from src.plugins.general.configdialog import (ConfigDialog, MainConfigPage,
                                             ColorSchemeConfigPage)
 from src.plugins.general.shortcuts import ShortcutsConfigPage
 from src.plugins.general.Parameters import ParametersWidget
-from src.plugins.general.ProfilesData import ProfilesExplorerWidget
-
-
+from src.plugins.general.ProfilesExplorer import ProfilesExplorerWidget
+from src.plugins.general.PopulationExplorer import PopulationExplorerWidget
 
 try:
     # Assuming Qt >= v4.4
@@ -503,6 +502,9 @@ class MainWindow(QMainWindow):
         self.profiles_explorer = ProfilesExplorerWidget(self)
         self.profiles_explorer.register_plugin()
         
+        
+        self.population_explorer = PopulationExplorerWidget(self)
+        self.population_explorer.register_plugin()
                        
         # ? menu
         about_action = create_action(self,
@@ -1184,7 +1186,7 @@ class MainWindow(QMainWindow):
             widget.initialize()
             dlg.add_page(widget)
         
-        for plugin in [self.onlinehelp, self.profiles_explorer] + self.thirdparty_plugins:
+        for plugin in [self.onlinehelp, self.profiles_explorer, self.population_explorer] + self.thirdparty_plugins:
             if plugin is not None:
                 print plugin
                 widget = plugin.create_configwidget(dlg)

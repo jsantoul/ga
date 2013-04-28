@@ -126,3 +126,77 @@ class PopulationExplorerWidget(OpenfiscaPluginWidget):
         self.datatables_choices = []
         self.dataframes = {}
         
+        
+
+    #------ OpenfiscaPluginMixin API ---------------------------------------------
+    
+    def apply_plugin_settings(self, options):
+        """
+        Apply configuration file's plugin settings
+        """
+                
+        if 'data_file' in options:
+            NotImplementedError
+       
+        if 'use_default' in options:     
+            from src.lib.utils import of_import
+            default_profiles_filename = of_import("","DEFAULT_PROFILES_FILENAME", self.simulation.country)
+            self.simulation.load_profiles(default_profiles_filename)
+            self.refresh_plugin()
+            
+            
+    #------ OpenfiscaPluginWidget API ---------------------------------------------
+
+    def get_plugin_title(self):
+        """
+        Return plugin title
+        Note: after some thinking, it appears that using a method
+        is more flexible here than using a class attribute
+        """
+        return _("Population Data Explorer")
+
+    
+    def get_plugin_icon(self):
+        """
+        Return plugin icon (QIcon instance)
+        Note: this is required for plugins creating a main window
+              (see OpenfiscaPluginMixin.create_mainwindow)
+              and for configuration dialog widgets creation
+        """
+        return get_icon('OpenFisca22.png')
+            
+    def get_plugin_actions(self):
+        """
+        Return a list of actions related to plugin
+        Note: these actions will be enabled when plugin's dockwidget is visible
+              and they will be disabled when it's hidden
+        """
+        pass
+
+    
+    def register_plugin(self):
+        """
+        Register plugin in OpenFisca's main window
+        """
+        self.simulation = self.main.simulation
+        self.main.add_dockwidget(self)
+
+    def refresh_plugin(self):
+        '''
+        Update Survey dataframes
+        '''
+        self.starting_long_process(_("Refreshing population explorer dataframe ..."))
+        self.clear()
+#        self.view.set_dataframe(self.simulation.profiles.reset_index())
+        self.ending_long_process(_("Population explorer dataframe updated"))
+    
+    def closing_plugin(self, cancelable=False):
+        """
+        Perform actions before parent main window is closed
+        Return True or False whether the plugin may be closed immediately or not
+        Note: returned value is ignored if *cancelable* is False
+        """
+        return True
+
+        
+ 
