@@ -134,6 +134,11 @@ DEFAULTS = [
               'enable': True,
               'data_file': None,
               }),
+            ('population',
+             {
+              'enable': True,
+              'data_file': None,
+              }),
             ('onlinehelp',
              {
               'shortcut': "Ctrl+Shift+D",

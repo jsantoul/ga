@@ -158,6 +158,7 @@ class ProfilesExplorerWidget(OpenfiscaPluginWidget):
 #        self.main.survey_toolbar_actions += self.run_menu_actions 
 #        
 #        return self.run_menu_actions
+        pass
 
     
     def register_plugin(self):
