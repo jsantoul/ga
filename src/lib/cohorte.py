@@ -228,8 +228,8 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        Arg1 : any growth rate 
-        Arg2 : any discount rate (such as interest rate)
+        arg1 : any growth rate 
+        arg2 : any discount rate (such as interest rate)
         """
         self['actualization']= NaN
         grouped = self.groupby(level = ['sex', 'age'])['actualization']
@@ -244,7 +244,7 @@ class Cohorts(DataFrame):
         Parameters
         ----------        
         rate : float,
-            Growth rate of the economy
+               Growth rate of the economy
         discount_rate : float
         typ : the type of data which has to be expanded.
             The cohort should have one column for the population and at least one other column (the profile)
@@ -291,7 +291,7 @@ class Cohorts(DataFrame):
 
 
                 
-    def aggregate_generation_present_value(self, typ):
+    def aggregate_generation_present_value(self, typ, discount_rate=None):
         """
         Computes the present value of one column for the whole generation
         
@@ -300,12 +300,17 @@ class Cohorts(DataFrame):
         typ : str
               Name of the column of the per capita profile of tax or transfer
         """
-        
-        # TODO: test if self['dsct'] exists
-        
+        # TODO: test if self['dsct'] exists <- Done 
+        if typ not in self._types:
+            raise Exception('cohort: variable %s is not in self._types' %typ)
+            return
+        if discount_rate is None:
+            discount_rate = 0.0
+        if 'dsct' not in self._types:
+            self.gen_dsct(discount_rate)
         tmp = self['dsct']*self[typ]*self['pop']
         tmp = tmp.unstack(level = 'year')  # untack year indices to columns
-        # TODO use a loop
+        # TODO use a loop <- Whatfor ?
 #        for sex in self.index_sets[sex]:
         
         pvm = tmp.xs(0, level='sex')
@@ -327,7 +332,7 @@ class Cohorts(DataFrame):
         return res
 
 
-    def per_capita_generation_present_value(self, typ):
+    def per_capita_generation_present_value(self, typ, discount_rate = None):
         """
         Returns present net value for typ per capita
         
@@ -340,9 +345,11 @@ class Cohorts(DataFrame):
 
         if typ not in self._types:
             raise Exception('cohort: variable %s is not in self._types' %typ)
-        pv_gen = self.pv_ga(typ) 
+        pv_gen = self.aggregate_generation_present_value(typ, discount_rate)
         pop = DataFrame({'pop' : self['pop']})
-        return DataFrame(pv_gen[typ]/pop['pop'])
+        pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
+        pv_percapita.columns = [typ]
+        return pv_percapita
 
     def population_project(self, year_length = None, method = None):
         """

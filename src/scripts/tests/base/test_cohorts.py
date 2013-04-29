@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # Created on 22 mars 2013
-# Copyright © 2013 Clément Schaff, Mahdi Ben Jelloul
-# Acknowlegement  
+# Copyright © 2013 Clément Schaff, Mahdi Ben Jelloul, Jérôme SANTOUL
+
 
 # Good docs about nosetest
 # http://ivory.idyll.org/articles/nose-intro.html
@@ -11,7 +11,8 @@ import nose
 from src.lib.cohorte import Cohorts
 from src.scripts.tests.utils import (create_testing_population_dataframe,
                                      create_empty_population_dataframe,
-                                     create_constant_profiles_dataframe)
+                                     create_constant_profiles_dataframe,
+                                     create_neutral_profiles_cohort)
                                      
  
 
@@ -134,14 +135,36 @@ def test_tax_projection_aggregated():
 
 
 
-def test_pv_ga():
-    pass
+def test_present_value():
+    """
+    Testing all the methods to generate a present value of net transfers
+    """
+    cohort = create_neutral_profiles_cohort(population = 1)
+    cohort2 = create_neutral_profiles_cohort(population = 2)
+
+    count = 0
+    res = cohort.aggregate_generation_present_value('tax')
+    res_percapita = cohort2.per_capita_generation_present_value('tax')
+#     print res_percapita.get_value((age, 1, 2002), 'tax')
+    while count <= 100:
+        print res_percapita.get_value((count, 1, 2001), 'tax'), res_percapita.get_value((count, 0, 2190), 'tax')
+        count +=1
+
+#     defining a function which creates the theoretical result of the present value for the following test
+    def control_value(x):
+        control_value = (50 - abs(x-50))
+        return control_value
+    age = 0
+    while age <= 100:
+#         print res.get_value((age, 1, 2002), 'tax'), res.get_value((age, 1, 2060), 'tax'), res.get_value((age, 0, 2198), 'tax')
+        assert res.get_value((age, 1, 2002), 'tax') == control_value(age), res.get_value((age, 1, 2060), 'tax') == control_value(age)
+        age +=1
 
 
 
 if __name__ == '__main__':
 
-#     test_population_projection() 
+#     test_population_projection()
 #     test_tax_projection() #Now working flawlessly
 #     test_tax_projection_aggregated() #Good to go
 #     test_fill_cohort() #Working
@@ -149,5 +172,7 @@ if __name__ == '__main__':
 #     test_empty_frame_generation()
 #     test_population_projection()
 #     test_column_combination() #Working
-    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
+#     create_neutral_profiles_cohort()
+    test_present_value()
+#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)
