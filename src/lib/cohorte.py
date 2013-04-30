@@ -417,7 +417,80 @@ class Cohorts(DataFrame):
         stacked = stacked.reorder_levels(['sex', 'year', 'age']).sortlevel()
         self.__init__(data = stacked, columns = ['pop'])
 
-
+    def filter_value(self, age=None, sex=None, year=None, typ=None):
+        """
+        A method to filter a multi-index Cohort in an easy fashion.
+        
+        Parameters
+        ----------
+        age = List
+            The values of the age index have to be between 0 and 100 included
+        sex = 0 or 1
+            The sex index we are interested in. 0 santds for males and 1 for females. Default is both.
+        year = List
+            The years we are interested in.
+        typ = Str
+            The data we want to select
+            
+        Returns
+        -------
+        A cohort with the specified index and columns
+        """
+        #TODO: test the method
+        #Setting up defaults arguments if not given
+        if typ is None:
+            typ = self._types
+        #Setting up filter to check if the arguments are valid
+#         if typ not in self._types:
+#             raise Exception('This is not a valid column of the cohort')
+        #Setting up filters
+        if age is not None:
+            filter_age = array([x in age for x in self.index.get_level_values(0)])
+        if sex is not None:
+            filter_sex = array(self.index.get_level_values(1) == sex)     
+        if year is not None:
+            filter_year = array([x in year for x in self.index.get_level_values(2)])
+        
+        #Filtering the cohort
+        if age is None:
+            if sex is None:
+                if year is None:
+                    restricted_cohort = self.loc[:, typ]  
+#                     return restricted_cohort
+                else:
+                    restricted_cohort = self.loc[filter_year, typ]
+#                     return restricted_cohort
+            else:
+                if year is None:
+                    restricted_cohort = self.loc[filter_sex, typ]
+#                     return restricted_cohort
+                else:
+                    filter_SY = array(filter_sex & filter_year)
+                    restricted_cohort = self.loc[filter_SY, typ]
+#                     return restricted_cohort
+        else:
+            if sex is None:
+                if year is None:
+                    restricted_cohort = self.loc[filter_age, typ]  
+#                     return restricted_cohort
+                else:
+                    filter_AY = array(filter_age & filter_year)
+                    restricted_cohort = self.loc[filter_AY, typ]
+#                     return restricted_cohort
+            else:
+                if year is None:
+                    filter_AS = array(filter_age & filter_sex)
+                    restricted_cohort = self.loc[filter_AS, typ]
+#                     return restricted_cohort
+                else:
+                    filter3 = array(filter_age & filter_sex & filter_year)
+                    print filter3
+                    restricted_cohort = self.loc[ filter3, typ]
+#                     return restricted_cohort
+        restricted_cohort_ = Cohorts(restricted_cohort)
+        restricted_cohort_.columns = [typ]
+        return restricted_cohort_
+    
     def get_unknown_years(self, typ):
         """
         
