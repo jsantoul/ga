@@ -9,6 +9,7 @@
 
 import nose
 from src.lib.cohorte import Cohorts
+from numpy import array
 from src.scripts.tests.utils import (create_testing_population_dataframe,
                                      create_empty_population_dataframe,
                                      create_constant_profiles_dataframe,
@@ -106,6 +107,9 @@ def test_tax_projection():
     g = 0.05
     r = 0
     cohort = Cohorts(population)
+    year_length = 200
+    method = 'stable'   
+    cohort.population_project(year_length, method = method)
     cohort.fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
@@ -184,6 +188,31 @@ def test_filter_value():
         assert abs(cohort_filtered.get_value((0, 1, count), 'tax') + (1+g)**(count-2001)) == 0.0
         count +=5
 
+def test_generation_extraction():
+    # Creating a fake cohort
+    n = 0.00
+    r = 0.00
+    g = 0.05
+    population = create_testing_population_dataframe(year_start=2001, year_end=2061, rate=n)
+    profile = create_constant_profiles_dataframe(population, tax=-1, sub=0.5)
+    cohort = Cohorts(population)
+    # Applying projection methods
+    year_length = 199
+    method = 'stable'   
+    cohort.population_project(year_length, method = method)  
+    cohort.fill(profile)
+    typ = None
+    cohort.proj_tax(g, r, typ,  method = 'per_capita')
+    
+    #Extracting generations
+    start = 2001
+    age = 4
+    generation = cohort.extract_generation(start, typ = 'tax', age = age)
+    count = age
+    while count <= 100 & start + count <= array(list(generation.index_sets['year'])).max():
+        assert abs((1+g)**(count+(start-2001)) + generation.get_value((count, 1, start+count), 'tax')) == 0.0
+        count +=1
+    print "c'est gagné"
 
 
 
@@ -200,5 +229,7 @@ if __name__ == '__main__':
 #     create_neutral_profiles_cohort()
 #     test_present_value()
 #     test_filter_value()
-    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
+#     test_generation_extraction()
+    print count(0,10)
+#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)

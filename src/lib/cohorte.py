@@ -300,7 +300,6 @@ class Cohorts(DataFrame):
         typ : str
               Name of the column of the per capita profile of tax or transfer
         """
-        # TODO: test if self['dsct'] exists <- Done 
         if typ not in self._types:
             raise Exception('cohort: variable %s is not in self._types' %typ)
             return
@@ -360,9 +359,9 @@ class Cohorts(DataFrame):
         year_length : int, default None
                       Duration to continue the population projection
         method : str, default None
-                 A value that must be 'stable' or 'TODO: add other protocols' is required.  
+                 The value must be 'stable' or 'exp_growth'  
         """
-#        For the other projection method, I see exponential growth at constant rate
+
         if 'pop' not in self.columns:
             raise Exception('pop is not a column of cohort')
         if year_length is None:
@@ -436,7 +435,6 @@ class Cohorts(DataFrame):
         -------
         A cohort with the specified index and columns
         """
-        #TODO: test the method
         #Setting up defaults arguments if not given
         if typ is None:
             typ = self._types
@@ -490,6 +488,57 @@ class Cohorts(DataFrame):
         restricted_cohort_ = Cohorts(restricted_cohort)
         restricted_cohort_.columns = [typ]
         return restricted_cohort_
+    
+    def extract_generation(self, year, typ, age = None):
+        """
+        Returns a dataframe containning chosen data for a given generation over the years.
+        """      
+
+        if year is None:
+            raise Exception('a year of reference is needed')
+        if year not in list(self.index_sets['year']):
+            raise Exception('The given year is not valid')
+        year_min = array(list(self.index_sets['year'])).min()
+        year_max = array(list(self.index_sets['year'])).max()
+        if typ not in self._types:
+            raise Exception('the given column is not in the cohort')
+        
+#        Normalizing the age if given
+        if age is None:
+            age = 0
+            print "you end up in age is None"
+        if age > 0:
+            while age > 0 & year > year_min:
+                year -=1
+                age -=1
+                print "we use the reset loop"
+                
+        pvm = self.xs(0, level='sex')
+        pvf = self.xs(1, level='sex')
+        
+#        Creating the filtering list
+        filter_list = []
+        age_range = [range(age, 101)]
+        # TODO: replace the below loop with something more adequate 
+        for count in age_range:
+            new_year = year + (count - age) 
+            if year in list(self.index_sets['year']):
+                filter_list.append((count, new_year))
+                print "filter building", year, age
+        print filter_list
+        print year_max
+        generation_data_male = pvm.loc[filter_list, typ]
+        generation_data_female = pvf.loc[filter_list, typ]
+        
+        pieces = [generation_data_male, generation_data_female]
+        res =  concat(pieces, keys = [0,1], names = ["sex"] )
+        res = res.reorder_levels(['age','sex','year'])
+        
+        generation_cohort = Cohorts(res)
+        generation_cohort.columns = [typ]
+        return generation_cohort
+    
+    
     
     def get_unknown_years(self, typ):
         """
