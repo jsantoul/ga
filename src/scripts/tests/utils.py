@@ -2,7 +2,7 @@
 '''
 Created on 26 avr. 2013
 
-@author: Mahdi Ben Jelloul
+@author: Mahdi Ben Jelloul, Jérôme Santoul
 '''
 
 from pandas import DataFrame, merge
@@ -10,7 +10,7 @@ from numpy import arange
 from src.lib.cohorte import Cohorts
 
 #===============================================================================
-# Some test function to generate fake data
+# Some function to generate fake data for testing
 #===============================================================================
 
 def create_empty_population_dataframe(year_start, year_end, population = None):
@@ -38,9 +38,8 @@ def create_testing_population_dataframe(year_start = None, year_end = None, rate
     """
     """
     if year_start is None or year_end is None:
-        #raise Exception("year_start and year_end are both required arguments")
-        print "year_start and year_end are both required arguments"
-        return
+        year_start = 2001
+        year_end = 2003
     if population is None:
         population = 1 
     if rate is None:       

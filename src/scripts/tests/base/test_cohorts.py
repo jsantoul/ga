@@ -213,6 +213,21 @@ def test_generation_extraction():
         assert abs((1+g)**(count+(start-2001)) + generation.get_value((count, 1, start+count), 'tax')) == 0.0
         count +=1
 
+def test_create_age_class():
+    """
+    Testing the method to regroup age classes
+    """
+    population = create_testing_population_dataframe(2001, 2003)
+    profile = create_constant_profiles_dataframe(population, tax = -1.0, sub=0.5) 
+
+    cohort = Cohorts(population)
+    cohort.fill(profile)
+    step = 5.0
+    age_class = cohort.create_age_class(step = step)
+    count = 0
+    while count < 100:
+        assert age_class.get_value((count, 1, 2001), 'sub') == step/2
+        count += step
 
 
 
@@ -230,6 +245,7 @@ if __name__ == '__main__':
 #     test_present_value()
 #     test_filter_value()
 #     test_generation_extraction()
+#     test_create_age_class()
 
     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)

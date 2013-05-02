@@ -548,7 +548,44 @@ class Cohorts(DataFrame):
         generation_cohort = Cohorts(res)
         generation_cohort.columns = [typ]
         return generation_cohort
-    
+
+
+   
+    def create_age_class(self, step = 1):
+        """
+        Transform a filled cohort dataframe by regrouping 
+        age indexies in age class indexies. The size of the age class is indicated by the step argument
+        
+        Parameters
+        ----------
+        step = Int
+        The number of years included in the age class
+        
+        Returns
+        -------
+        A DataFrame of the Cohorts class with age indexes replaced with class indicies
+        """
+        # Separating Men and Women
+        pvm = self.xs(0, level='sex')
+        pvf = self.xs(1, level='sex')
+        pvm.reset_index(inplace = True)
+        pvf.reset_index(inplace = True)
+        
+        #Transforming the age indexes
+        serie = array(pvm.age)
+        pvm['age'] = array((serie//step)*step)
+        pvf['age'] = array((serie//step)*step)
+            
+        age_class_pvm = pvm.groupby(['age', 'year']).sum()
+        age_class_pvf = pvf.groupby(['age', 'year']).sum()
+        
+        #Put back the dataframes together
+        pieces = [age_class_pvm, age_class_pvf]
+        res =  concat(pieces, keys = [0,1], names = ["sex"] )
+        res = res.reset_index()
+        res = res.set_index(['age', 'sex', 'year'])
+        return res            
+
     
     
     def get_unknown_years(self, typ):
