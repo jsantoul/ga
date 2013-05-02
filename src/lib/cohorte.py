@@ -507,33 +507,44 @@ class Cohorts(DataFrame):
         if age is None:
             age = 0
             print "you end up in age is None"
-        if age > 0:
-            while age > 0 & year > year_min:
-                year -=1
-                age -=1
-                print "we use the reset loop"
+
                 
         pvm = self.xs(0, level='sex')
         pvf = self.xs(1, level='sex')
         
+
+        #Creating lower bounds for the filter generation
+        if age > 0:
+            if year-age >= year_min:
+                start_age = 0
+                year_start = year - age
+            else:
+                start_age = age - (year - year_min)
+                year_start = year_min
+        else:
+            start_age = age
+            year_start = year
+
+
+        #Creating upper bounds for filter generation
+        if year + (100-age) >= year_max:
+            year_end = year_max
+            end_age = age + (year_max - year)
+        else:
+            year_end = year + 100 - age
+            end_age = 100
+
 #        Creating the filtering list
-        filter_list = []
-        age_range = [range(age, 101)]
-        # TODO: replace the below loop with something more adequate 
-        for count in age_range:
-            new_year = year + (count - age) 
-            if year in list(self.index_sets['year']):
-                filter_list.append((count, new_year))
-                print "filter building", year, age
-        print filter_list
-        print year_max
+        filter_list = zip(range(start_age, end_age+1), range(year_start, year_end+1))
+        
+#         Generation the generation FataFrame
         generation_data_male = pvm.loc[filter_list, typ]
         generation_data_female = pvf.loc[filter_list, typ]
-        
+         
         pieces = [generation_data_male, generation_data_female]
         res =  concat(pieces, keys = [0,1], names = ["sex"] )
         res = res.reorder_levels(['age','sex','year'])
-        
+         
         generation_cohort = Cohorts(res)
         generation_cohort.columns = [typ]
         return generation_cohort

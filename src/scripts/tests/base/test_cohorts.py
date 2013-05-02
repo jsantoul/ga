@@ -205,14 +205,14 @@ def test_generation_extraction():
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
     
     #Extracting generations
-    start = 2001
-    age = 4
+    start = 2030
+    age = 0
     generation = cohort.extract_generation(start, typ = 'tax', age = age)
     count = age
     while count <= 100 & start + count <= array(list(generation.index_sets['year'])).max():
         assert abs((1+g)**(count+(start-2001)) + generation.get_value((count, 1, start+count), 'tax')) == 0.0
         count +=1
-    print "c'est gagné"
+
 
 
 
@@ -230,6 +230,6 @@ if __name__ == '__main__':
 #     test_present_value()
 #     test_filter_value()
 #     test_generation_extraction()
-    print count(0,10)
-#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
+
+    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)
