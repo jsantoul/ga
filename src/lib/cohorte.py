@@ -299,6 +299,11 @@ class Cohorts(DataFrame):
         ----------
         typ : str
               Name of the column of the per capita profile of tax or transfer
+        discount_rate : float
+                        Rate used to calculate the present value
+        Returns
+        -------
+        res : a dataframe with column 'typ' containing the aggregat present value of typ 
         """
         if typ not in self._types:
             raise Exception('cohort: variable %s is not in self._types' %typ)
@@ -381,7 +386,6 @@ class Cohorts(DataFrame):
             last_pop = self.xs(last_year, level='year', axis=0)
             pop = DataFrame(self['pop'])
             years = range(last_year+1,new_last_year+1)
-            # TODO: modify here to add population growth rate
             list_df = [last_pop] * len(years)
 
             pop = concat(list_df, keys = years, names =['year'])
@@ -491,7 +495,21 @@ class Cohorts(DataFrame):
     
     def extract_generation(self, year, typ, age = None):
         """
-        Returns a dataframe containning chosen data for a given generation over the years.
+        Returns a dataframe containning chosen data to follow the evolution of a given group over time.
+        
+        Parameters
+        ----------
+        year : Int
+                A year of reference contained in the cohort.
+        typ : Str
+              A column or a list of columns of the cohort that one wants to follow
+        age : Int
+              Default is zero. The age of reference of the group one is interested in.
+        
+        Returns
+        -------
+        generation_cohort : a cohort dataframe with the data of the group of people 
+                            whose given references belong to. 
         """      
 
         if year is None:
@@ -503,16 +521,13 @@ class Cohorts(DataFrame):
         if typ not in self._types:
             raise Exception('the given column is not in the cohort')
         
-#        Normalizing the age if given
+        #Normalizing the age if not given
         if age is None:
             age = 0
-            print "you end up in age is None"
-
                 
         pvm = self.xs(0, level='sex')
         pvf = self.xs(1, level='sex')
         
-
         #Creating lower bounds for the filter generation
         if age > 0:
             if year-age >= year_min:
@@ -525,8 +540,7 @@ class Cohorts(DataFrame):
             start_age = age
             year_start = year
 
-
-        #Creating upper bounds for filter generation
+        #Creating upper bounds for filter_list
         if year + (100-age) >= year_max:
             year_end = year_max
             end_age = age + (year_max - year)
@@ -534,7 +548,7 @@ class Cohorts(DataFrame):
             year_end = year + 100 - age
             end_age = 100
 
-#        Creating the filtering list
+        #Creating the filtering list
         filter_list = zip(range(start_age, end_age+1), range(year_start, year_end+1))
         
 #         Generation the generation FataFrame
@@ -548,7 +562,44 @@ class Cohorts(DataFrame):
         generation_cohort = Cohorts(res)
         generation_cohort.columns = [typ]
         return generation_cohort
-    
+
+
+   
+    def create_age_class(self, step = 1):
+        """
+        Transform a filled cohort dataframe by regrouping 
+        age indexies in age class indexies. The size of the age class is indicated by the step argument
+        
+        Parameters
+        ----------
+        step : Int
+        The number of years included in the age class
+        
+        Returns
+        -------
+        res : A DataFrame of the Cohorts class with age indexes replaced with class indicies
+        """
+        # Separating Men and Women
+        pvm = self.xs(0, level='sex')
+        pvf = self.xs(1, level='sex')
+        pvm.reset_index(inplace = True)
+        pvf.reset_index(inplace = True)
+        
+        #Transforming the age indexes
+        serie = array(pvm.age)
+        pvm['age'] = array((serie//step)*step)
+        pvf['age'] = array((serie//step)*step)
+            
+        age_class_pvm = pvm.groupby(['age', 'year']).sum()
+        age_class_pvf = pvf.groupby(['age', 'year']).sum()
+        
+        #Put back the dataframes together
+        pieces = [age_class_pvm, age_class_pvf]
+        res =  concat(pieces, keys = [0,1], names = ["sex"] )
+        res = res.reset_index()
+        res = res.set_index(['age', 'sex', 'year'])
+        return res            
+
     
     
     def get_unknown_years(self, typ):
