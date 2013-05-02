@@ -71,7 +71,6 @@ class PopulationExplorerConfigPage(PluginConfigPage):
         population_layout.addWidget(country_default_radio)
         population_layout.addLayout(population_file_layout)
         population_group.setLayout(population_layout)
-
         vlayout = QVBoxLayout()
         vlayout.addWidget(population_group)
         vlayout.addStretch(1)
@@ -126,8 +125,7 @@ class PopulationExplorerWidget(OpenfiscaPluginWidget):
         self.datatables_choices = []
         self.dataframes = {}
         
-        
-
+    
     #------ OpenfiscaPluginMixin API ---------------------------------------------
     
     def apply_plugin_settings(self, options):

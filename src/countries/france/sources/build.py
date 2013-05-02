@@ -13,7 +13,7 @@ import os
 def build_hdf_fr():
         
     # population
-    DIR= '../../data_fr/proj_pop_insee'
+    DIR = '../../data_fr/proj_pop_insee'
         
     store = HDFStore(os.path.join(DIR,'proj_pop.h5'))    
     sex_dict = {0: 'populationH', 1: 'populationF'} 
@@ -63,7 +63,7 @@ def build_hdf_fr():
     store.close()
     
     # profiles
-    DIR= '../../data_fr'
+    DIR = '../../data_fr'
     profile_file = 'profils.xls'
     store = HDFStore(os.path.join(DIR,'profiles.h5'))
     filename = os.path.join(DIR, profile_file)

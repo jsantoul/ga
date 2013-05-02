@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # Created on 22 mars 2013
-# Copyright © 2013 Clément Schaff, Mahdi Ben Jelloul
-# Acknowlegement  
+# Copyright © 2013 Clément Schaff, Mahdi Ben Jelloul, Jérôme SANTOUL
+
 
 # Good docs about nosetest
 # http://ivory.idyll.org/articles/nose-intro.html
@@ -9,9 +9,11 @@
 
 import nose
 from src.lib.cohorte import Cohorts
+from numpy import array
 from src.scripts.tests.utils import (create_testing_population_dataframe,
                                      create_empty_population_dataframe,
-                                     create_constant_profiles_dataframe)
+                                     create_constant_profiles_dataframe,
+                                     create_neutral_profiles_cohort)
                                      
  
 
@@ -105,6 +107,9 @@ def test_tax_projection():
     g = 0.05
     r = 0
     cohort = Cohorts(population)
+    year_length = 200
+    method = 'stable'   
+    cohort.population_project(year_length, method = method)
     cohort.fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
@@ -119,7 +124,6 @@ def test_tax_projection():
 def test_tax_projection_aggregated():
     n = 1
     population = create_testing_population_dataframe(year_start=2001, year_end=2061, rate=n)
-    print population.get_value((0,0,2011), 'pop')
     profile = create_constant_profiles_dataframe(population, tax=-1, sub=0.5)
     g = 0.5
     r = 0.0 
@@ -134,14 +138,87 @@ def test_tax_projection_aggregated():
 
 
 
-def test_pv_ga():
-    pass
+def test_present_value():
+    """
+    Testing all the methods to generate a present value of net transfers
+    """
+    size_generation = 3
+    cohort = create_neutral_profiles_cohort(population = 1)
+    cohort2 = create_neutral_profiles_cohort(population = size_generation)
+
+    res = cohort.aggregate_generation_present_value('tax')  
+    
+#     defining a function which creates the theoretical result of the present value for the following test
+    def control_value(x):
+        control_value = (50 - abs(x-50))
+        return control_value
+    
+    age = 0
+    while age <= 100:
+        assert res.get_value((age, 1, 2002), 'tax') == control_value(age), res.get_value((age, 1, 2060), 'tax') == control_value(age)
+        age +=1
+              
+    res_percapita = cohort2.per_capita_generation_present_value('tax')
+    res_control = cohort2.aggregate_generation_present_value('tax', discount_rate=0)
+    
+    count = 0
+    while count <= 100:
+        print res_percapita.get_value((count, 1, 2001), 'tax'), res_control.get_value((count, 0, 2001), 'tax')
+        assert res_percapita.get_value((count, 1, 2001), 'tax')*size_generation == res_control.get_value((count, 0, 2001), 'tax')
+        count +=1
+
+def test_filter_value():
+    """
+    Testing the method to filter data from a given cohort
+    """
+    #Generate a testing cohort with 5% population and economy growth 
+    n = 0.05
+    population = create_testing_population_dataframe(year_start=2001, year_end=2061, rate=n)
+    profile = create_constant_profiles_dataframe(population, tax=-1, sub=0.5)
+    cohort = Cohorts(population)
+    cohort.fill(profile)
+    r = 0.0
+    g = 0.05
+    column = None
+    cohort.proj_tax(g, r, column,  method = 'per_capita')
+    #Testing restrictions
+    cohort_filtered = cohort.filter_value(age = list(range(0, 100, 10)), year = list(range(2001, 2060, 5)), typ = 'tax')
+    count = 2001
+    while count <= 2060:
+        assert abs(cohort_filtered.get_value((0, 1, count), 'tax') + (1+g)**(count-2001)) == 0.0
+        count +=5
+
+def test_generation_extraction():
+    # Creating a fake cohort
+    n = 0.00
+    r = 0.00
+    g = 0.05
+    population = create_testing_population_dataframe(year_start=2001, year_end=2061, rate=n)
+    profile = create_constant_profiles_dataframe(population, tax=-1, sub=0.5)
+    cohort = Cohorts(population)
+    # Applying projection methods
+    year_length = 199
+    method = 'stable'   
+    cohort.population_project(year_length, method = method)  
+    cohort.fill(profile)
+    typ = None
+    cohort.proj_tax(g, r, typ,  method = 'per_capita')
+    
+    #Extracting generations
+    start = 2030
+    age = 0
+    generation = cohort.extract_generation(start, typ = 'tax', age = age)
+    count = age
+    while count <= 100 & start + count <= array(list(generation.index_sets['year'])).max():
+        assert abs((1+g)**(count+(start-2001)) + generation.get_value((count, 1, start+count), 'tax')) == 0.0
+        count +=1
+
 
 
 
 if __name__ == '__main__':
 
-#     test_population_projection() 
+#     test_population_projection()
 #     test_tax_projection() #Now working flawlessly
 #     test_tax_projection_aggregated() #Good to go
 #     test_fill_cohort() #Working
@@ -149,5 +226,10 @@ if __name__ == '__main__':
 #     test_empty_frame_generation()
 #     test_population_projection()
 #     test_column_combination() #Working
+#     create_neutral_profiles_cohort()
+#     test_present_value()
+#     test_filter_value()
+#     test_generation_extraction()
+
     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)

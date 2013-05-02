@@ -228,8 +228,8 @@ class Cohorts(DataFrame):
         
         Parameters
         ----------
-        Arg1 : any growth rate 
-        Arg2 : any discount rate (such as interest rate)
+        arg1 : any growth rate 
+        arg2 : any discount rate (such as interest rate)
         """
         self['actualization']= NaN
         grouped = self.groupby(level = ['sex', 'age'])['actualization']
@@ -244,7 +244,7 @@ class Cohorts(DataFrame):
         Parameters
         ----------        
         rate : float,
-            Growth rate of the economy
+               Growth rate of the economy
         discount_rate : float
         typ : the type of data which has to be expanded.
             The cohort should have one column for the population and at least one other column (the profile)
@@ -291,7 +291,7 @@ class Cohorts(DataFrame):
 
 
                 
-    def aggregate_generation_present_value(self, typ):
+    def aggregate_generation_present_value(self, typ, discount_rate=None):
         """
         Computes the present value of one column for the whole generation
         
@@ -300,12 +300,16 @@ class Cohorts(DataFrame):
         typ : str
               Name of the column of the per capita profile of tax or transfer
         """
-        
-        # TODO: test if self['dsct'] exists
-        
+        if typ not in self._types:
+            raise Exception('cohort: variable %s is not in self._types' %typ)
+            return
+        if discount_rate is None:
+            discount_rate = 0.0
+        if 'dsct' not in self._types:
+            self.gen_dsct(discount_rate)
         tmp = self['dsct']*self[typ]*self['pop']
         tmp = tmp.unstack(level = 'year')  # untack year indices to columns
-        # TODO use a loop
+        # TODO use a loop <- Whatfor ?
 #        for sex in self.index_sets[sex]:
         
         pvm = tmp.xs(0, level='sex')
@@ -327,7 +331,7 @@ class Cohorts(DataFrame):
         return res
 
 
-    def per_capita_generation_present_value(self, typ):
+    def per_capita_generation_present_value(self, typ, discount_rate = None):
         """
         Returns present net value for typ per capita
         
@@ -340,9 +344,11 @@ class Cohorts(DataFrame):
 
         if typ not in self._types:
             raise Exception('cohort: variable %s is not in self._types' %typ)
-        pv_gen = self.pv_ga(typ) 
+        pv_gen = self.aggregate_generation_present_value(typ, discount_rate)
         pop = DataFrame({'pop' : self['pop']})
-        return DataFrame(pv_gen[typ]/pop['pop'])
+        pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
+        pv_percapita.columns = [typ]
+        return pv_percapita
 
     def population_project(self, year_length = None, method = None):
         """
@@ -353,9 +359,9 @@ class Cohorts(DataFrame):
         year_length : int, default None
                       Duration to continue the population projection
         method : str, default None
-                 A value that must be 'stable' or 'TODO: add other protocols' is required.  
+                 The value must be 'stable' or 'exp_growth'  
         """
-#        For the other projection method, I see exponential growth at constant rate
+
         if 'pop' not in self.columns:
             raise Exception('pop is not a column of cohort')
         if year_length is None:
@@ -410,7 +416,141 @@ class Cohorts(DataFrame):
         stacked = stacked.reorder_levels(['sex', 'year', 'age']).sortlevel()
         self.__init__(data = stacked, columns = ['pop'])
 
+    def filter_value(self, age=None, sex=None, year=None, typ=None):
+        """
+        A method to filter a multi-index Cohort in an easy fashion.
+        
+        Parameters
+        ----------
+        age = List
+            The values of the age index have to be between 0 and 100 included
+        sex = 0 or 1
+            The sex index we are interested in. 0 santds for males and 1 for females. Default is both.
+        year = List
+            The years we are interested in.
+        typ = Str
+            The data we want to select
+            
+        Returns
+        -------
+        A cohort with the specified index and columns
+        """
+        #Setting up defaults arguments if not given
+        if typ is None:
+            typ = self._types
+        #Setting up filter to check if the arguments are valid
+#         if typ not in self._types:
+#             raise Exception('This is not a valid column of the cohort')
+        #Setting up filters
+        if age is not None:
+            filter_age = array([x in age for x in self.index.get_level_values(0)])
+        if sex is not None:
+            filter_sex = array(self.index.get_level_values(1) == sex)     
+        if year is not None:
+            filter_year = array([x in year for x in self.index.get_level_values(2)])
+        
+        #Filtering the cohort
+        if age is None:
+            if sex is None:
+                if year is None:
+                    restricted_cohort = self.loc[:, typ]  
+#                     return restricted_cohort
+                else:
+                    restricted_cohort = self.loc[filter_year, typ]
+#                     return restricted_cohort
+            else:
+                if year is None:
+                    restricted_cohort = self.loc[filter_sex, typ]
+#                     return restricted_cohort
+                else:
+                    filter_SY = array(filter_sex & filter_year)
+                    restricted_cohort = self.loc[filter_SY, typ]
+#                     return restricted_cohort
+        else:
+            if sex is None:
+                if year is None:
+                    restricted_cohort = self.loc[filter_age, typ]  
+#                     return restricted_cohort
+                else:
+                    filter_AY = array(filter_age & filter_year)
+                    restricted_cohort = self.loc[filter_AY, typ]
+#                     return restricted_cohort
+            else:
+                if year is None:
+                    filter_AS = array(filter_age & filter_sex)
+                    restricted_cohort = self.loc[filter_AS, typ]
+#                     return restricted_cohort
+                else:
+                    filter3 = array(filter_age & filter_sex & filter_year)
+                    print filter3
+                    restricted_cohort = self.loc[ filter3, typ]
+#                     return restricted_cohort
+        restricted_cohort_ = Cohorts(restricted_cohort)
+        restricted_cohort_.columns = [typ]
+        return restricted_cohort_
+    
+    def extract_generation(self, year, typ, age = None):
+        """
+        Returns a dataframe containning chosen data for a given generation over the years.
+        """      
 
+        if year is None:
+            raise Exception('a year of reference is needed')
+        if year not in list(self.index_sets['year']):
+            raise Exception('The given year is not valid')
+        year_min = array(list(self.index_sets['year'])).min()
+        year_max = array(list(self.index_sets['year'])).max()
+        if typ not in self._types:
+            raise Exception('the given column is not in the cohort')
+        
+#        Normalizing the age if given
+        if age is None:
+            age = 0
+            print "you end up in age is None"
+
+                
+        pvm = self.xs(0, level='sex')
+        pvf = self.xs(1, level='sex')
+        
+
+        #Creating lower bounds for the filter generation
+        if age > 0:
+            if year-age >= year_min:
+                start_age = 0
+                year_start = year - age
+            else:
+                start_age = age - (year - year_min)
+                year_start = year_min
+        else:
+            start_age = age
+            year_start = year
+
+
+        #Creating upper bounds for filter generation
+        if year + (100-age) >= year_max:
+            year_end = year_max
+            end_age = age + (year_max - year)
+        else:
+            year_end = year + 100 - age
+            end_age = 100
+
+#        Creating the filtering list
+        filter_list = zip(range(start_age, end_age+1), range(year_start, year_end+1))
+        
+#         Generation the generation FataFrame
+        generation_data_male = pvm.loc[filter_list, typ]
+        generation_data_female = pvf.loc[filter_list, typ]
+         
+        pieces = [generation_data_male, generation_data_female]
+        res =  concat(pieces, keys = [0,1], names = ["sex"] )
+        res = res.reorder_levels(['age','sex','year'])
+         
+        generation_cohort = Cohorts(res)
+        generation_cohort.columns = [typ]
+        return generation_cohort
+    
+    
+    
     def get_unknown_years(self, typ):
         """
         
