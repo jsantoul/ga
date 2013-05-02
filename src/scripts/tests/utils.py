@@ -75,12 +75,21 @@ def create_constant_profiles_dataframe(population_dataframe, **kwargs):
 
 def create_neutral_profiles_cohort(population):
     """
-    Utility function which generates a cohort with population and tax as such : 
-        Anybody below 50 years old (excluded) pays -1
-        Anybody between 50 and 99 years old recieve 1
-        Anybody over 100 years old included pays 0
-        As such, the total net transfer is zero for all generations
-        No projection is needed, the dataframe is delivered without "hole"
+    Utility function which generates a cohort with population and transfers.
+    No projection is needed, the dataframe is delivered without "hole"
+    
+    Parameters
+    ----------
+    population : Int
+                 The value of the constant population at each period and for each age
+    
+    Returns
+    -------
+    cohort : a cohort dataframe such that :
+            Anybody below 50 years old (excluded) pays -1
+            Anybody between 50 and 99 years old recieve 1
+            Anybody over 100 years old included pays 0
+            As such, the total net transfer is zero for newborns
     """
     n = 0
     population_dataframe = create_testing_population_dataframe(year_start=2001, year_end=2201, rate=n, population=population)
