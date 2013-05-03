@@ -373,12 +373,12 @@ class Cohorts(DataFrame):
             raise Exception('a duration in years should be provided')
         if method is None:
             raise Exception('a method should be specified')
-        years = self.index_sets['year'] 
+        years = self.index_sets['year']
         first_year = min(years)
         last_year = max(years)
         
         if ( first_year + year_length ) > last_year:
-            new_last_year = first_year + year_length 
+            new_last_year = first_year + year_length
         else:
             return
 

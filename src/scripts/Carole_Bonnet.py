@@ -32,7 +32,7 @@ population['pop'] = population[0]
 del population['level_2']
 del population[0]
 population = population.set_index(['age', 'sex', 'year'])
-print population['pop']
+# print population['pop']
 
 net_payments = Simulation()
 net_payments.set_population(population)
@@ -53,7 +53,7 @@ net_payments.load_profiles("C:\Users\Utilisateur\Documents\GitHub\ga\src\countri
 # net_payments.get_population_choices("src.countries.france.sources.data_fr.poj_pop_insee.pop.csv")
   
 #Setting parameters
-year_length = 100
+year_length = 100.0
 #===============================================================================
 # #Does not work because of error : 
 #   File "C:\Users\Utilisateur\Documents\GitHub\ga\src\lib\simulation.py", line 117, in create_cohorts
@@ -77,10 +77,12 @@ year_length = 100
 
 cohorts = Cohorts(data = population, columns = ['pop'])      
         # Complete population projection
+print cohorts.index_sets, 'step 1'
 cohorts.population_project(year_length, method = "exp_growth")
         # Generate discount factor and growth factor
 cohorts.gen_dsct(net_payments.discount_rate)
 cohorts.gen_grth(net_payments.growth_rate)
+print cohorts
         # Fill profiles
 cohorts.fill(net_payments.profiles)
 method = net_payments.tax_projection["method"]
