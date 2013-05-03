@@ -78,7 +78,7 @@ class Simulation(object):
         Set profiles dataframe
         
         dataframe : pandas DataFrame
-                    Dataframe conaining the population
+                    Dataframe conaining the profiles
         
         """
         self.profiles = dataframe
@@ -94,7 +94,7 @@ class Simulation(object):
         profiles_filename : str
                    complete path to the hdf5 file
                    
-        profiles : str, defaulut to "profiles"
+        profiles : str, default to "profiles"
                    name of the table in the hdf5 file
         """
         
