@@ -43,31 +43,6 @@ def test_population_projection():
 #    print test_value
     assert test_value == 1
 
-#     print population_dataframe.head()
-#     
-#     population_dataframe.reset_index(inplace=True)
-#     population_dataframe_restricted = population_dataframe[population_dataframe.year==2007 ]
-#     population_dataframe_restricted["tax"] = 1 
-# 
-#     profiles_dataframe = population_dataframe_restricted.set_index(['age', 'sex','year'])
-#     
-#     population_dataframe.set_index(['age', 'sex','year'], inplace=True)
-#     simulation = Simulation()
-#     simulation.set_population(population_dataframe)
-#     simulation.set_profiles(profiles_dataframe)
-#     simulation.set_population_projection(year_length=200, method="constant")
-# 
-#     r = 0.00
-#     g = 0.00
-#     simulation.set_growth_rate(g)
-#     simulation.set_discount_rate(r)       
-# 
-#     simulation.create_cohorts()
-#     
-#     
-#     test_value = simulation.cohorts.get_value((0,0,2100),"tax")
-#     assert test_value == 1    
-#     pass
 
 def test_column_combination():
     year_start = 2001
