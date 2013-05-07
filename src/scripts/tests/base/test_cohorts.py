@@ -157,7 +157,7 @@ def test_filter_value():
     column = None
     cohort.proj_tax(g, r, column,  method = 'per_capita')
     #Testing restrictions
-    cohort_filtered = cohort.filter_value(age = list(range(0, 100, 10)), year = list(range(2001, 2060, 5)), typ = 'tax')
+    cohort_filtered = cohort.filter_value(age = list(range(0, 100, 1)), year = list(range(2001, 2060, 5)), typ = 'tax')
     count = 2001
     while count <= 2060:
         assert abs(cohort_filtered.get_value((0, 1, count), 'tax') + (1+g)**(count-2001)) == 0.0
