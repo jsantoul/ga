@@ -107,10 +107,8 @@ class Simulation(object):
         Create cohorts according to population, tax and transfers,
         and state expenses projection    
         """
-        #TODO: remove the print added to debug
         population = self.population
         cohorts = Cohorts(data = population, columns = ['pop'])
-        print cohorts.index
         
         # Complete population projection
         year_length = self.population_projection["year_length"]

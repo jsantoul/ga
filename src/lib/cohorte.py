@@ -486,7 +486,7 @@ class Cohorts(DataFrame):
 #                     return restricted_cohort
                 else:
                     filter3 = array(filter_age & filter_sex & filter_year)
-                    print filter3
+#                     print filter3
                     restricted_cohort = self.loc[ filter3, typ]
 #                     return restricted_cohort
         restricted_cohort_ = Cohorts(restricted_cohort)

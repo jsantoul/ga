@@ -9,8 +9,9 @@
 
 import os
 from src.lib.simulation import Simulation
+from src.lib.cohorte import Cohorts
 from pandas import read_csv, HDFStore, concat
-from numpy import array
+from numpy import array, hstack
 from src import SRC_PATH
 
 
@@ -70,14 +71,18 @@ def test():
     simulation = Simulation()
 #     print simulation.get_population_choices(population_filename)
     check = HDFStore(population_filename)
-    print check
+#     print check
     check.close()
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
         
     simulation.load_population(population_filename, population_scenario)
     simulation.load_profiles(profiles_filename)
-    
-    r = 0.0
+    """
+    Hypothesis set #1 : 
+    actualization rate r = 3%
+    growth rate g = 1%
+    """
+    r = 0.03
     g = 0.01
     simulation.set_discount_rate(r)
     simulation.set_growth_rate(g)
@@ -90,7 +95,32 @@ def test():
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r)        
     simulation.create_cohorts()
-    print simulation.cohorts.head()
+#     print simulation.cohorts.head()
+    print simulation.cohorts._types
+    simulation.cohorts['total_taxes'] = 0
+    simulation.cohorts['total_payments'] = 0
+    set_taxes = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
+    set_payments = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
+    print simulation.cohorts._types
+    for typ in set_taxes:
+        simulation.cohorts['total_taxes'] += hstack(simulation.cohorts[typ])
+    for typ in set_payments:
+        simulation.cohorts['total_payments'] += hstack(simulation.cohorts[typ])
+    #Net_transfers = money recieved from the state minus tax paid
+    simulation.cohorts['net_transfers'] = simulation.cohorts['total_taxes'] - simulation.cohorts['total_payments']
+#     print simulation.cohorts['net_transfers']
+#     print simulation.cohorts.get_value((5,1,2010), 'net_transfers')
+
+    #Creating age classes
+    simulation.cohorts = Cohorts(simulation.cohorts.create_age_class(step = 5))
+    simulation.cohorts._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+    print simulation.cohorts._types
+    
+    #Generating generationnal accounts
+    aggregate_gen_pv = simulation.cohorts.aggregate_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
+    print aggregate_gen_pv.xs((0, 2007), level = ['sex', 'year'])
+    print aggregate_gen_pv.xs((0, 2008), level = ['sex', 'year'])
+
     
 if __name__ == '__main__':
     test()
