@@ -9,8 +9,9 @@
 
 import os
 from src.lib.simulation import Simulation
+from src.lib.cohorte import Cohorts
 from pandas import read_csv, HDFStore, concat
-from numpy import array
+from numpy import array, hstack
 from src import SRC_PATH
 
 
@@ -36,15 +37,12 @@ def test():
     filter_year = array([x in year for x in population.index.get_level_values(2)])
     population = population.loc[filter_year, :]
     
-    
-        
     country = "france"    
     population_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
                                            'data_fr', 'proj_pop_insee', 'proj_pop.h5')
     profiles_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
                                          'data_fr','profiles.h5')
-    
-    
+       
 #     population.append_to_multiple(population_filename, "table", append = True)
     
 #     Previous attempt to fuse INSEE and the pop data of C Bonnet
@@ -65,32 +63,72 @@ def test():
 #     export = HDFStore('neo_population.h5', 'r')
 
 
-
-    
     simulation = Simulation()
-#     print simulation.get_population_choices(population_filename)
-    check = HDFStore(population_filename)
-    print check
-    check.close()
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
         
     simulation.load_population(population_filename, population_scenario)
     simulation.load_profiles(profiles_filename)
-    
-    r = 0.0
+    """
+    Hypothesis set #1 : 
+    actualization rate r = 3%
+    growth rate g = 1%
+    """
+    r = 0.03
     g = 0.01
     simulation.set_discount_rate(r)
     simulation.set_growth_rate(g)
     
     #Setting parameters
     year_length = 100
-    
     simulation.set_population_projection(year_length=year_length, method="exp_growth")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r)        
     simulation.create_cohorts()
-    print simulation.cohorts.head()
+
+#     print simulation.cohorts.head()
+    print simulation.cohorts._types
+
+#     print simulation.cohorts._types
+
+
+    #Calculating net transfers
+    #Net_transfers = money recieved from the state minus tax paid (state point of view)
     
+    simulation.cohorts['total_taxes'] = 0
+    simulation.cohorts['total_payments'] = 0
+    
+    set_taxes = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
+    set_payments = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
+    
+    for typ in set_taxes:
+        simulation.cohorts['total_taxes'] += hstack(simulation.cohorts[typ])
+    for typ in set_payments:
+        simulation.cohorts['total_payments'] += hstack(simulation.cohorts[typ])
+    
+    simulation.cohorts['net_transfers'] = simulation.cohorts['total_taxes'] - simulation.cohorts['total_payments']
+    simulation.cohorts._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+    
+    """
+    Reproducing the table 2 : Comptes générationnels par âge et sexe (Compte central)
+    """
+    #Generating generationnal accounts
+    simulation.cohorts = Cohorts(simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
+    print "PER CAPITA PV"
+    print simulation.cohorts.xs(0, level = 'age').head()
+    print simulation.cohorts.xs((0, 2007), level = ['sex', 'year']).head()
+
+    # Calculating the Intertemporal Public Liability
+    ipl = simulation.cohorts.compute_ipl(typ = 'net_transfers')
+    print "ipl =", ipl
+    
+    #Creating age classes
+    cohorts_age_class = Cohorts(simulation.cohorts.create_age_class(step = 5))
+    cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+    print "AGE CLASS PV"
+    print cohorts_age_class.xs((1, 2007), level = ['sex', 'year']).head()
+    print cohorts_age_class.xs(0, level = 'age').head()
+    
+     
 if __name__ == '__main__':
     test()
