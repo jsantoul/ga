@@ -602,9 +602,23 @@ class Cohorts(DataFrame):
 
     def compute_ipl(self, typ, net_gov_wealth = None, net_gov_spendings = None):
         """
-        Return a value of the intertemporal public liability
+        Return a value of the intertemporal public liability. 
+        The dataframe has to contain the aggregated present values of transfer in order 
+        for the method to work correctly
+        
         Parameters
         ----------
+        typ : the column containing the data used in the calculation
+        
+        net_gov_wealth : the present value of the wealth of the government
+        
+        net_gov_spendings : the present value of unventilated (TODO: check spelling) government's spendings
+        
+        Returns
+        -------
+        
+        ipl : float
+            the value of the intertemporal public liability
         """
         if net_gov_wealth is None:
             net_gov_wealth = 0
@@ -625,7 +639,7 @@ class Cohorts(DataFrame):
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
         #Note : do not forget to eliminate values counted twice
-        ipl = past_gen_transfer + future_gen_transfer - net_gov_wealth + net_gov_spendings - past_gen_dataframe.get_value((0, 1), typ)
+        ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 1), typ)
         return ipl
     
     

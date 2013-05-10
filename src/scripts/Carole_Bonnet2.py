@@ -113,21 +113,30 @@ def test():
     Reproducing the table 2 : Comptes générationnels par âge et sexe (Compte central)
     """
     #Generating generationnal accounts
-    simulation.cohorts = Cohorts(simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
+    per_capita_present_value = Cohorts(simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
     print "PER CAPITA PV"
-    print simulation.cohorts.xs(0, level = 'age').head()
-    print simulation.cohorts.xs((0, 2007), level = ['sex', 'year']).head()
+    print per_capita_present_value.xs(0, level = 'age').head()
+    print per_capita_present_value.xs((0, 2007), level = ['sex', 'year']).head()
 
     # Calculating the Intertemporal Public Liability
-    ipl = simulation.cohorts.compute_ipl(typ = 'net_transfers')
+    aggregated_present_value = Cohorts(simulation.cohorts.aggregate_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
+    ipl = aggregated_present_value.compute_ipl(typ = 'net_transfers')
+    print "AGGREGATED PV"
+    print aggregated_present_value.xs(0, level = 'age').head()
+    print aggregated_present_value.xs((0, 2007), level = ['sex', 'year']).head()
+    print "----------------------------------"
     print "ipl =", ipl
-    
+    print "----------------------------------"
+
     #Creating age classes
-    cohorts_age_class = Cohorts(simulation.cohorts.create_age_class(step = 5))
+    cohorts_age_class = Cohorts(per_capita_present_value.create_age_class(step = 5))
     cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+    age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
+    age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
     print "AGE CLASS PV"
-    print cohorts_age_class.xs((1, 2007), level = ['sex', 'year']).head()
-    print cohorts_age_class.xs(0, level = 'age').head()
+    print age_class_pv_fe
+    print age_class_pv_ma
+    #Note: there is a problem with the last age class : in the paper it includes people from 95 to 100. The program seperates the 100
     
      
 if __name__ == '__main__':
