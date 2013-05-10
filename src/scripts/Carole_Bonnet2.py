@@ -12,6 +12,7 @@ from src.lib.simulation import Simulation
 from src.lib.cohorte import Cohorts
 from pandas import read_csv, HDFStore, concat
 from numpy import array, hstack
+import matplotlib.pyplot as plt
 from src import SRC_PATH
 
 
@@ -133,10 +134,22 @@ def test():
     cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
     age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
     age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
+    
+    
+    age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
+    age_class_pv = age_class_pv['net_transfers']
+    age_class_pv.columns = ['men' , 'women']
     print "AGE CLASS PV"
     print age_class_pv_fe
     print age_class_pv_ma
     #Note: there is a problem with the last age class : in the paper it includes people from 95 to 100. The program seperates the 100
+
+    
+    #Plotting
+    age_class_pv.plot(style = '--') ; plt.legend()
+    plt.axhline(linewidth=2, color='black')
+    plt.axvline(color='black')
+    plt.show()
     
      
 if __name__ == '__main__':
