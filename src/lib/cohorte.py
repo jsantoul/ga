@@ -627,7 +627,6 @@ class Cohorts(DataFrame):
         
         year_min = array(list(self.index_sets['year'])).min()
         year_max = array(list(self.index_sets['year'])).max()
-        
 #         age_min = array(list(self.index_sets['age'])).min()
         age_max = array(list(self.index_sets['age'])).max()
         
