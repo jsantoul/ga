@@ -87,8 +87,8 @@ def create_neutral_profiles_cohort(population):
     -------
     cohort : a cohort dataframe such that :
             Anybody below 50 years old (excluded) pays -1
-            Anybody between 50 and 99 years old recieve 1
-            Anybody over 100 years old included pays 0
+            Anybody between 50 and 99 years old (included) recieve 1
+            Anybody over 100 years old (included) pays 0
             As such, the total net transfer is zero for newborns
     """
     n = 0
@@ -105,9 +105,6 @@ def create_neutral_profiles_cohort(population):
     typ = 'tax'
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
 
-#     print cohort
-#     print cohort.get_value((100,0,2030), 'tax'), cohort.get_value((99,0,2030), 'tax'), cohort.get_value((49,0,2030), 'tax')
-#     test_value = cohort.get_value((0,1,2002), 'tax')    
     return cohort
 
 

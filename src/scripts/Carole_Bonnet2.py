@@ -133,8 +133,8 @@ def test():
     aggregated_present_value = Cohorts(simulation.cohorts.aggregate_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
     ipl = aggregated_present_value.compute_ipl(typ = 'net_transfers', net_gov_wealth = -3207.7e+09)
     print "----------------------------------"
-    print "ipl =", ipl
-    print "en part de PIB : ", ipl/8050.6e+09*100, "%"
+    print "IPL =", ipl
+    print "share of the GDP : ", ipl/8050.6e+09*100, "%"
     print "----------------------------------"
 
 

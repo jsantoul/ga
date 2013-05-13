@@ -34,6 +34,7 @@ class Cohorts(DataFrame):
             self._nb_type = 0
             self._types = list()
             self._types_years = dict()   # TODO: merge this dict with the previous list
+            self._pv_aggregate = None
             self._pv_percapita = None
             
             self.post_init()
@@ -334,6 +335,7 @@ class Cohorts(DataFrame):
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
         res.columns = [typ]
+        self._pv_aggregate = res
         return res
 
 
@@ -552,7 +554,7 @@ class Cohorts(DataFrame):
         #Creating the filtering list
         filter_list = zip(range(start_age, end_age+1), range(year_start, year_end+1))
         
-#         Generation the generation FataFrame
+#         Generation the generation DataFrame
         generation_data_male = pvm.loc[filter_list, typ]
         generation_data_female = pvf.loc[filter_list, typ]
          
@@ -632,24 +634,70 @@ class Cohorts(DataFrame):
         age_max = array(list(self.index_sets['age'])).max()
         
         past_gen_dataframe = self.xs(year_min, level = 'year')
-        print past_gen_dataframe.head(10)
         past_gen_dataframe = past_gen_dataframe.cumsum()
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
-        print past_gen_dataframe.head(10)
-        print past_gen_dataframe.tail(10)
+
         
         future_gen_dataframe = self.xs(0, level = 'age')
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
-        print future_gen_dataframe.head(10)
-        print future_gen_dataframe.tail(10)
         #Note : do not forget to eliminate values counted twice
         ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
-        print past_gen_dataframe.get_value((0, 0), typ)
         return ipl
     
     
-    
+    def compute_gen_imbalance(self, typ, net_gov_wealth = None, net_gov_spendings = None, growth_rate = 0, discount_rate = 0):
+        """
+        Returns the generationnal imbalance between the newborn of the reference year 
+        and the unborn of the next year.
+        
+        Stratégie : calculer les transferts agrégés des gén futures pour équilibrer la CBI
+        N_futur = G_net - W_net - N_passé
+        Puis : calculer n_futur = [N_futur]/(mu_1*Pop_t+1)
+        avec mu_1 = Sum{[(1+g)/(1+n)]^i*P_i/P_1}
+        """
+        if net_gov_wealth is None:
+            net_gov_wealth = 0
+        if net_gov_spendings is None:
+            net_gov_spendings = 0
+        
+        #Computing the net transfer of future generation that even the budget constraint
+        year_min = array(list(self.index_sets['year'])).min()
+        year_max = array(list(self.index_sets['year'])).max()
+#         age_min = array(list(self.index_sets['age'])).min()
+        age_max = array(list(self.index_sets['age'])).max()
+        
+        past_gen_dataframe = self._pv_aggregate.xs(year_min, level = 'year')
+        print past_gen_dataframe['tax']
+        past_gen_dataframe = past_gen_dataframe.cumsum()
+        past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
+        print "past_gen_transfer = ", past_gen_transfer
+        
+        future_gen_transfer = net_gov_spendings - net_gov_wealth - past_gen_transfer
+        print "future_gen_transfer", future_gen_transfer
+        
+        #Computing the adjustment coefficient of the population mu_1
+        population_unborn = self.get_value((0,0, year_min+1), 'pop') + self.get_value((0,1,year_min+1), 'pop')
+        print "population_unborn", population_unborn
+        frozen_pop = self.filter_value(age = [0], year = range(year_min+1, year_max+1), typ='pop')
+        frozen_pop.gen_actualization(growth_rate, discount_rate)
+        frozen_pop["actualization"] *= self["pop"]/population_unborn
+        print frozen_pop["actualization"]
+        frozen_pop.cumsum()
+        mu_1 = frozen_pop.get_value((0,1,year_max), 'actualization')
+        print "mu_1 = ", mu_1
+        
+        #Computing the final coefficients
+        percapita_future_gen_transfer = n_1 = future_gen_transfer/(mu_1*population_unborn)
+        actual_gen_transfer = n_0 = (self._pv_percapita.get_value((0, 0, year_min), typ) + 
+                               self._pv_percapita.get_value((0, 1, year_min), typ))
+        
+        imbalance = n_1 - n_0
+        imbalance_ratio = n_1/n_0
+        coefficients = [n_1, imbalance, imbalance_ratio]
+        return coefficients
+
+
     def get_unknown_years(self, typ):
         """
         
