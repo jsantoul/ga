@@ -77,6 +77,8 @@ def test():
     Hypothesis set #1 : 
     actualization rate r = 3%
     growth rate g = 1%
+    net_gov_wealth = -3217.7e+09 (unit : Franc Français (FF) of 1996)
+    
     """
     r = 0.03
     g = 0.01
@@ -84,7 +86,7 @@ def test():
     simulation.set_growth_rate(g)
     
     #Setting parameters
-    year_length = 100
+    year_length = 200
     simulation.set_population_projection(year_length=year_length, method="exp_growth")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
@@ -92,7 +94,7 @@ def test():
     simulation.create_cohorts()
 
 #     print simulation.cohorts.head()
-    print simulation.cohorts._types
+#     print simulation.cohorts._types
 
 #     print simulation.cohorts._types
 
@@ -121,47 +123,48 @@ def test():
     Reproducing the table 2 : Comptes générationnels par âge et sexe (Compte central)
     """
     #Generating generationnal accounts
-    per_capita_present_value = Cohorts(simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
+    simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
     print "PER CAPITA PV"
-    print per_capita_present_value.xs(0, level = 'age').head()
-    print per_capita_present_value.xs((0, 2007), level = ['sex', 'year']).head()
+    print simulation.cohorts._pv_percapita.xs(0, level = 'age').head()
+    print simulation.cohorts._pv_percapita.xs((0, 2007), level = ['sex', 'year']).head()
 
 
     # Calculating the Intertemporal Public Liability
     aggregated_present_value = Cohorts(simulation.cohorts.aggregate_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate))
-    ipl = aggregated_present_value.compute_ipl(typ = 'net_transfers')
+    ipl = aggregated_present_value.compute_ipl(typ = 'net_transfers', net_gov_wealth = -3207.7e+09)
     print "----------------------------------"
     print "ipl =", ipl
+    print "en part de PIB : ", ipl/8050.6e+09*100, "%"
     print "----------------------------------"
 
 
-    #Creating age classes
-    cohorts_age_class = Cohorts(per_capita_present_value.create_age_class(step = 5))
-    cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
-    age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
-    age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
-    print "AGE CLASS PV"
-    print age_class_pv_fe
-    print age_class_pv_ma
+#     #Creating age classes
+#     cohorts_age_class = Cohorts(simulation.cohorts._pv_percapita.create_age_class(step = 5))
+#     cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+#     age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
+#     age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
+#     print "AGE CLASS PV"
+#     print age_class_pv_fe
+#     print age_class_pv_ma
     
     """
     TODO: there is a problem with the last age class : in the paper it includes people from 95 to 100 years old. 
     However the program seperates the 100 years old and more from the others
     """
     
-    #Plotting
-    age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
-    age_class_pv = age_class_pv['net_transfers']
-    age_class_pv.columns = ['men' , 'women']
-#     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
-#     age_class_pv['total'] *= 1.0/2.0
-    age_class_theory = xls.parse('Feuil1', index_col = 0)
-     
-    age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
-    age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
-    age_class_pv.plot(style = '--') ; plt.legend()
-    plt.axhline(linewidth=2, color='black')
-    plt.show()
+#     #Plotting
+#     age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
+#     age_class_pv = age_class_pv['net_transfers']
+#     age_class_pv.columns = ['men' , 'women']
+# #     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
+# #     age_class_pv['total'] *= 1.0/2.0
+#     age_class_theory = xls.parse('Feuil1', index_col = 0)
+#       
+#     age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
+#     age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
+#     age_class_pv.plot(style = '--') ; plt.legend()
+#     plt.axhline(linewidth=2, color='black')
+#     plt.show()
     
      
 if __name__ == '__main__':

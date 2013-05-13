@@ -34,6 +34,7 @@ class Cohorts(DataFrame):
             self._nb_type = 0
             self._types = list()
             self._types_years = dict()   # TODO: merge this dict with the previous list
+            self._pv_percapita = None
             
             self.post_init()
 
@@ -353,7 +354,7 @@ class Cohorts(DataFrame):
         pop = DataFrame({'pop' : self['pop']})
         pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
         pv_percapita.columns = [typ]
-        return pv_percapita
+        self._pv_percapita = Cohorts(pv_percapita)
 
     def population_project(self, year_length = None, method = None):
         """
@@ -631,14 +632,20 @@ class Cohorts(DataFrame):
         age_max = array(list(self.index_sets['age'])).max()
         
         past_gen_dataframe = self.xs(year_min, level = 'year')
+        print past_gen_dataframe.head(10)
         past_gen_dataframe = past_gen_dataframe.cumsum()
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
+        print past_gen_dataframe.head(10)
+        print past_gen_dataframe.tail(10)
         
         future_gen_dataframe = self.xs(0, level = 'age')
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
+        print future_gen_dataframe.head(10)
+        print future_gen_dataframe.tail(10)
         #Note : do not forget to eliminate values counted twice
-        ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 1), typ)
+        ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
+        print past_gen_dataframe.get_value((0, 0), typ)
         return ipl
     
     
