@@ -133,22 +133,22 @@ def test_present_value():
         assert res.get_value((age, 1, 2002), 'tax') == control_value(age), res.get_value((age, 1, 2060), 'tax') == control_value(age)
         age +=1
               
-    res_percapita = cohort2.per_capita_generation_present_value('tax')
+    cohort2.per_capita_generation_present_value('tax')
     res_control = cohort2.aggregate_generation_present_value('tax', discount_rate=0)
     
     count = 0
     while count <= 100:
-        print res_percapita.get_value((count, 1, 2001), 'tax'), res_control.get_value((count, 0, 2001), 'tax')
-        assert res_percapita.get_value((count, 1, 2001), 'tax')*size_generation == res_control.get_value((count, 0, 2001), 'tax')
+        print cohort2._pv_percapita.get_value((count, 1, 2001), 'tax'), res_control.get_value((count, 0, 2001), 'tax')
+        assert cohort2._pv_percapita.get_value((count, 1, 2001), 'tax')*size_generation == res_control.get_value((count, 0, 2001), 'tax')
         count +=1
 
 def test_compute_ipl():
     
     size_generation = 3
     cohort2 = create_neutral_profiles_cohort(population = size_generation)
-    cohort_percapita = Cohorts(cohort2.per_capita_generation_present_value('tax'))
-    ipl = cohort_percapita.compute_ipl(typ = 'tax', net_gov_wealth = 10)
-    assert ipl == -10.0
+    cohort2.per_capita_generation_present_value('tax')
+    ipl = cohort2._pv_percapita.compute_ipl(typ = 'tax', net_gov_wealth = 10)
+    assert ipl == 10.0
 
 
 def test_filter_value():
@@ -202,7 +202,7 @@ def test_create_age_class():
     Testing the method to regroup age classes
     """
     population = create_testing_population_dataframe(2001, 2003)
-    profile = create_constant_profiles_dataframe(population, tax = -1.0, sub=0.5) 
+    profile = create_constant_profiles_dataframe(population, tax = 1.0, sub=-0.5) 
 
     cohort = Cohorts(population)
     cohort.fill(profile)
@@ -210,7 +210,7 @@ def test_create_age_class():
     age_class = cohort.create_age_class(step = step)
     count = 0
     while count < 100:
-        assert age_class.get_value((count, 1, 2001), 'sub') == step/2
+        assert age_class.get_value((count, 1, 2001), 'sub') == -0.5
         count += step
 
 
@@ -230,7 +230,7 @@ if __name__ == '__main__':
 #     test_filter_value()
 #     test_generation_extraction()
 #     test_create_age_class()
-    test_compute_ipl()
+#     test_compute_ipl()
 
-#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
+    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)
