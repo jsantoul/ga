@@ -123,23 +123,22 @@ def test():
     Reproducing the table 2 : Comptes générationnels par âge et sexe (Compte central)
     """
     #Generating generationnal accounts
-    simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
+    simulation.create_present_values(typ = 'net_transfers')
+#     simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
 #     print "PER CAPITA PV"
 #     print simulation.cohorts._pv_percapita.xs(0, level = 'age').head()
 #     print simulation.cohorts._pv_percapita.xs((0, 2007), level = ['sex', 'year']).head()
 
 
     # Calculating the Intertemporal Public Liability
-    aggregated_present_value = simulation.cohorts
-    ipl = aggregated_present_value.compute_ipl(typ = 'net_transfers', net_gov_wealth = -3207.7e+09)
+    ipl = simulation.compute_ipl(typ = 'net_transfers')
     print "----------------------------------"
     print "IPL =", ipl
     print "share of the GDP : ", ipl/8050.6e+09*100, "%"
     print "----------------------------------"
     
     #Calculating the generational imbalance
-    simulation.cohorts.aggregate_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
-    gen_imbalance = simulation.cohorts.compute_gen_imbalance(typ = 'net_transfers', net_gov_wealth = -3207.7e+09, growth_rate = simulation.growth_rate, discount_rate = simulation.discount_rate)
+    gen_imbalance = simulation.compute_gen_imbalance(typ = 'net_transfers')
     print "----------------------------------"
     print "imbalance : [n_1=", gen_imbalance[0], ", n_1-n_0=", gen_imbalance[1], ", n_1/n_0=", gen_imbalance[2],"]"
     print "----------------------------------"    

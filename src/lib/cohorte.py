@@ -408,8 +408,8 @@ class Cohorts(DataFrame):
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
         res.columns = [typ]
-        self._pv_aggregate = res #TODO : change to redirect the result to an attribute of simulation.
-        return res
+#         self._pv_aggregate = res #TODO : change to redirect the result to an attribute of simulation.
+        return Cohorts(res)
 
 
     def per_capita_generation_present_value(self, typ, discount_rate = None):
@@ -429,7 +429,7 @@ class Cohorts(DataFrame):
         pop = DataFrame({'pop' : self['pop']})
         pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
         pv_percapita.columns = [typ]
-        return pv_percapita
+        return Cohorts(pv_percapita)
 
 #===============================================================================
 # Other methods

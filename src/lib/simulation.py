@@ -3,12 +3,12 @@ Created on 20 mars 2013
 
 @author: benjello, santoul
 '''
-
+from __future__ import division
 from pandas import HDFStore
 from cohorte import Cohorts
 from numpy import array
 from pandas import concat
-from __future__ import division
+
 
 class Simulation(object):
     """
@@ -217,7 +217,7 @@ class Simulation(object):
         self.cohorts = cohorts
         
     
-    def create_present_values(self, cohort, typ):
+    def create_present_values(self, typ):
         """
         Create aggregated and per capita present values of net transfers according to the given cohort
         and state expenses projection 
