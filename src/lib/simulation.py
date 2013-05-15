@@ -7,7 +7,8 @@ Created on 20 mars 2013
 '''
 from __future__ import division
 from pandas import HDFStore
-from cohorte import Cohorts
+from DataCohorts import DataCohorts
+from AccountingCohorts import AccountingCohorts
 from numpy import array
 from pandas import concat
 
@@ -198,7 +199,7 @@ class Simulation(object):
         and state expenses projection    
         """
         population = self.population
-        cohorts = Cohorts(data = population, columns = ['pop'])
+        cohorts = DataCohorts(data = population, columns = ['pop'])
         
         # Complete population projection
         year_length = self.population_projection["year_length"]
@@ -245,10 +246,10 @@ class Simulation(object):
         TODO: finish the doc
          
         """        
-        year_min = array(list(self.aggregate_pv.index_sets['year'])).min()
-        year_max = array(list(self.aggregate_pv.index_sets['year'])).max()
-#         age_min = array(list(self.aggregate_pv.index_sets['age'])).min()
-        age_max = array(list(self.aggregate_pv.index_sets['age'])).max()
+        year_min = self.aggregate_pv._year_min
+        year_max = self.aggregate_pv._year_max
+#         age_min = self.aggregate_pv._agemin
+        age_max = self.aggregate_pv._agemax
          
         #Calculating the past transfers for both genders then deducting the equilibrium future transfers
          
@@ -294,161 +295,6 @@ class Simulation(object):
         return coefficients
 
  
-#     def extract_generation(self, dataframe, year, typ, age = None):
-#         """
-#         Returns a dataframe containning chosen data to follow the evolution of a given group over time.
-#         
-#         Parameters
-#         ----------
-#         year : Int
-#                 A year of reference contained in the cohort.
-#         typ : Str
-#               A column or a list of columns of the cohort that one wants to follow
-#         age : Int
-#               Default is zero. The age of reference of the group one is interested in.       
-#         dataframe : pandas dataframe
-#         A data frame containing the relevant data. It has to be an attribute of simulation (either : cohorts, aggregate_pv or percapita_pv).
-#         
-#         Returns
-#         -------
-#         generation_cohort : a cohort dataframe with the data of the group of people 
-#                             whose given references belong to. 
-#         """      
-# 
-#         if year is None:
-#             raise Exception('a year of reference is needed')
-#         if year not in list(self.dataframe.index_sets['year']):
-#             raise Exception('The given year is not valid')
-#         year_min = array(list(self.dataframe.index_sets['year'])).min()
-#         year_max = array(list(self.dataframe.index_sets['year'])).max()
-#         if typ not in self._types:
-#             raise Exception('the given column is not in the cohort')
-#         
-#         #Normalizing the age if not given
-#         if age is None:
-#             age = 0
-# 
-#         pvm = self.xs(0, level='sex')
-#         pvf = self.xs(1, level='sex')
-#         
-#         #Creating lower bounds for the filter generation
-#         if age > 0:
-#             if year-age >= year_min:
-#                 start_age = 0
-#                 year_start = year - age
-#             else:
-#                 start_age = age - (year - year_min)
-#                 year_start = year_min
-#         else:
-#             start_age = age
-#             year_start = year
-# 
-#         #Creating upper bounds for filter_list
-#         if year + (100-age) >= year_max:
-#             year_end = year_max
-#             end_age = age + (year_max - year)
-#         else:
-#             year_end = year + 100 - age
-#             end_age = 100
-# 
-#         #Creating the filtering list
-#         filter_list = zip(range(start_age, end_age+1), range(year_start, year_end+1))
-#         
-# #         Generation the generation DataFrame
-#         generation_data_male = pvm.loc[filter_list, typ]
-#         generation_data_female = pvf.loc[filter_list, typ]
-#          
-#         pieces = [generation_data_male, generation_data_female]
-#         res =  concat(pieces, keys = [0,1], names = ["sex"] )
-#         res = res.reorder_levels(['age','sex','year'])
-#          
-#         generation_cohort = Cohorts(res)
-#         generation_cohort.columns = [typ]
-#         return generation_cohort
-# 
-# 
-#    
-#     def create_age_class(self, dataframe, step = 1):
-#         """
-#         Transform a filled cohort dataframe by regrouping 
-#         age indexies in age class indexies. The size of the age class is indicated by the step argument
-#         
-#         Parameters
-#         ----------
-#         step : Int
-#         The number of years included in the age class
-#         
-#         dataframe : pandas dataframe
-#         A data frame containing the relevant data. It has to be an attribute of simulation (cohorts, aggregate_pv, percapita_pv).
-#         
-#         Returns
-#         -------
-#         age_class : A DataFrame of the Cohorts class with age indexes replaced with class indexes with values being the mean of the age class
-#         """
-#         # Separating Men and Women
-#         pvm = self.dataframe.xs(0, level='sex')
-#         pvf = self.dataframe.xs(1, level='sex')
-#         pvm.reset_index(inplace = True)
-#         pvf.reset_index(inplace = True)
-#         
-#         #Transforming the age indexes
-#         serie = array(pvm.age)
-#         pvm['age'] = array((serie//step)*step)
-#         pvf['age'] = array((serie//step)*step)
-#             
-#         age_class_pvm = pvm.groupby(['age', 'year']).mean()
-#         age_class_pvf = pvf.groupby(['age', 'year']).mean()
-#         
-#         #Put back the dataframes together
-#         pieces = [age_class_pvm, age_class_pvf]
-#         age_class =  concat(pieces, keys = [0,1], names = ["sex"] )
-#         age_class = age_class.reset_index()
-#         age_class = age_class.set_index(['age', 'sex', 'year'])
-#         return age_class            
-# 
-#     def compute_ipl(self, typ):
-#         """
-#         Return a value of the intertemporal public liability. 
-#         The dataframe has to contain the aggregated present values of transfer in order 
-#         for the method to work correctly
-#         
-#         Parameters
-#         ----------
-#         typ : the column containing the data used in the calculation
-#         
-#         net_gov_wealth : the present value of the wealth of the government
-#         
-#         net_gov_spendings : the present value of unventilated government's spendings
-#         
-#         Returns
-#         -------
-#         
-#         ipl : float
-#             the value of the intertemporal public liability
-#         """
-# 
-#         year_min = array(list(self.aggregate_pv.index_sets['year'])).min()
-#         year_max = array(list(self.aggregate_pv.index_sets['year'])).max()
-# #         age_min = array(list(self.aggregate_pv.index_sets['age'])).min()
-#         age_max = array(list(self.aggregate_pv.index_sets['age'])).max()
-#         
-#         past_gen_dataframe = self.aggregate_pv.xs(year_min, level = 'year')
-#         past_gen_dataframe = past_gen_dataframe.cumsum()
-#         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
-# 
-#         
-#         future_gen_dataframe = self.aggregate_pv.xs(0, level = 'age')
-#         future_gen_dataframe = future_gen_dataframe.cumsum()
-#         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
-#         print "check future_gen_transfer", future_gen_transfer
-#         #Note : do not forget to eliminate values counted twice
-#         ipl = past_gen_transfer + future_gen_transfer + self.net_gov_wealth - self.net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
-#         return ipl
-#     
-#     
-
-
-
 
 if __name__ == '__main__':
     pass

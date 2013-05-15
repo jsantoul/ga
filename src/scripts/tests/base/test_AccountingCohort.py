@@ -24,13 +24,6 @@ def test_compute_ipl():
     assert ipl == 10.0
     
     
-# TODO: create an equivalent test for simulation    
-# def test_compute_gen_imbalance():
-#     size_generation = 1
-#     cohort = create_neutral_profiles_cohort(population = size_generation)
-#     cohort2 = cohort.per_capita_generation_present_value('tax')
-#     gen_imbalance = cohort2.compute_gen_imbalance(typ = 'tax', net_gov_wealth = 10)
-#     assert gen_imbalance[0] == -5010.0/(2*199.0), gen_imbalance[1] == -5010.0/(2*199.0)
 
 def test_generation_extraction():
     # Creating a fake cohort
