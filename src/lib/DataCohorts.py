@@ -8,7 +8,7 @@ Created on 14 mai 2013
 from __future__ import division
 from pandas import DataFrame, read_csv, concat, ExcelFile, HDFStore
 from numpy import NaN, arange, hstack, array
-import os
+from src.lib.AccountingCohorts import AccountingCohorts
 from cohorte import Cohorts
 
 class DataCohorts(Cohorts):
@@ -240,7 +240,7 @@ class DataCohorts(Cohorts):
         res = res.set_index(['age', 'sex', 'year'])
         res.columns = [typ]
 #         self._pv_aggregate = res #TODO : change to redirect the result to an attribute of simulation.
-        return Cohorts(res)
+        return AccountingCohorts(res)
 
 
     def per_capita_generation_present_value(self, typ, discount_rate = None):
@@ -260,4 +260,8 @@ class DataCohorts(Cohorts):
         pop = DataFrame({'pop' : self['pop']})
         pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
         pv_percapita.columns = [typ]
-        return Cohorts(pv_percapita)
+        return AccountingCohorts(pv_percapita)
+
+
+if __name__ == '__main__':
+    pass
