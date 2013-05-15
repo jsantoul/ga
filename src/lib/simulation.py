@@ -1,7 +1,7 @@
 '''
 Created on 20 mars 2013
 
-@author: benjello, santoul
+@author: benjelloul, santoul
 '''
 from __future__ import division
 from pandas import HDFStore
@@ -18,7 +18,6 @@ class Simulation(object):
         super(Simulation, self).__init__()
         self.population = None
         self.profiles = None
-        self.cohorts = None
         self.population_projection = None
         self.tax_projection = None
         self.growth_rate = None
@@ -26,8 +25,9 @@ class Simulation(object):
         self.country = None
         self.net_gov_wealth = 0
         self.net_gov_spendings = 0
-        self.aggregate_pv = None
-        self.percapita_pv = None
+        self.cohorts = None #A DataCohorts object
+        self.aggregate_pv = None #An AccountingCohorts object
+        self.percapita_pv = None #An AccountingCohorts object
         
 #===============================================================================
 # Set of methods to enter various parameters of the simulation object
