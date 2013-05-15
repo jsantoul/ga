@@ -75,27 +75,15 @@ def test_filter_value():
 
 
 
-
-
-
-
 if __name__ == '__main__':
 
 #     test_population_projection()
-#     test_tax_projection() #Now working flawlessly
-#     test_tax_projection_aggregated() #Good to go
-#     test_fill_cohort() #Working
 #     test_dsct() #Working
 #     test_empty_frame_generation()
 #     test_population_projection()
 #     test_column_combination() #Working
 #     create_neutral_profiles_cohort()
-#     test_present_value()
 #     test_filter_value()
-#     test_generation_extraction()
-#     test_create_age_class()
-#     test_compute_ipl()
-#     test_compute_gen_imbalance()
 
     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
 #     nose.core.runmodule(argv=[__file__, '-vvs', '-x', '--pdb', '--pdb-failure'], exit=False)

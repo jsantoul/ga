@@ -164,12 +164,12 @@ class AccountingCohorts(Cohorts):
 #         age_min = array(list(self.index_sets['age'])).min()
         age_max = array(list(self.index_sets['age'])).max()
          
-        past_gen_dataframe = self._pv_aggregate.xs(year_min, level = 'year')
+        past_gen_dataframe = self.xs(year_min, level = 'year')
         past_gen_dataframe = past_gen_dataframe.cumsum()
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
  
          
-        future_gen_dataframe = self._pv_aggregate.xs(0, level = 'age')
+        future_gen_dataframe = self.xs(0, level = 'age')
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
         print "check future_gen_transfer", future_gen_transfer

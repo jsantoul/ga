@@ -19,8 +19,8 @@ def test_compute_ipl():
     
     size_generation = 3
     cohort2 = create_neutral_profiles_cohort(population = size_generation)
-    cohort2.aggregate_generation_present_value('tax')
-    ipl = cohort2.compute_ipl(typ = 'tax', net_gov_wealth = 10)
+    cohort3 = cohort2.aggregate_generation_present_value('tax')
+    ipl = cohort3.compute_ipl(typ = 'tax', net_gov_wealth = 10)
     assert ipl == 10.0
     
     
@@ -47,6 +47,8 @@ def test_generation_extraction():
     cohort.fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
+    cohort = AccountingCohorts(cohort)
+    cohort._types = ['tax']
     
     #Extracting generations
     start = 2030
@@ -66,18 +68,21 @@ def test_create_age_class():
 
     cohort = DataCohorts(population)
     cohort.fill(profile)
-    cohort2 = cohort.aggregate_generation_present_value('tax', discount_rate=0)
+    cohort2 = cohort.per_capita_generation_present_value('tax', discount_rate=0)
+    print cohort2.head()
+    print cohort2.tail()
     step = 5.0
     age_class = cohort2.create_age_class(step = step)
+    print age_class.tail(10)
     count = 0
     while count < 100:
-        assert age_class.get_value((count, 1, 2001), 'sub') == -0.5
+        assert age_class.get_value((count, 1, 2001), 'tax') == 2
         count += step
 
 
 
 if __name__ == "__main__":
-    test_compute_ipl()
-    test_create_age_class()
-
-#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
+#     test_compute_ipl()
+#     test_create_age_class()
+#     test_generation_extraction()
+    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])
