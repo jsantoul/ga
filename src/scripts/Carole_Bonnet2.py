@@ -9,7 +9,7 @@
 from __future__ import division
 import os
 from src.lib.simulation import Simulation
-from src.lib.cohorte import Cohorts
+from src.lib.AccountingCohorts import AccountingCohorts
 from pandas import read_csv, HDFStore, concat, ExcelFile, Series
 from numpy import array, hstack
 import matplotlib.pyplot as plt
@@ -82,8 +82,12 @@ def test():
     """
     r = 0.03
     g = 0.01
+    net_gov_wealth = -3217.7e+09
+    net_gov_spendings = 0
     simulation.set_discount_rate(r)
     simulation.set_growth_rate(g)
+    simulation.set_gov_wealth(net_gov_wealth)
+    simulation.set_gov_spendings(net_gov_spendings)
     
     #Setting parameters
     year_length = 200
@@ -124,7 +128,6 @@ def test():
     """
     #Generating generationnal accounts
     simulation.create_present_values(typ = 'net_transfers')
-#     simulation.cohorts.per_capita_generation_present_value(typ = 'net_transfers', discount_rate = simulation.discount_rate)
 #     print "PER CAPITA PV"
 #     print simulation.cohorts._pv_percapita.xs(0, level = 'age').head()
 #     print simulation.cohorts._pv_percapita.xs((0, 2007), level = ['sex', 'year']).head()
@@ -132,10 +135,10 @@ def test():
 
     # Calculating the Intertemporal Public Liability
     ipl = simulation.compute_ipl(typ = 'net_transfers')
-    print "----------------------------------"
+    print "------------------------------------"
     print "IPL =", ipl
     print "share of the GDP : ", ipl/8050.6e+09*100, "%"
-    print "----------------------------------"
+    print "------------------------------------"
     
     #Calculating the generational imbalance
     gen_imbalance = simulation.compute_gen_imbalance(typ = 'net_transfers')
@@ -144,33 +147,33 @@ def test():
     print "----------------------------------"    
     
     
-#     #Creating age classes
-#     cohorts_age_class = Cohorts(simulation.cohorts._pv_percapita.create_age_class(step = 5))
-#     cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
-#     age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
-#     age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
-#     print "AGE CLASS PV"
-#     print age_class_pv_fe
-#     print age_class_pv_ma
+    #Creating age classes
+    cohorts_age_class = AccountingCohorts(simulation.percapita_pv.create_age_class(step = 5))
+    cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
+    age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
+    age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
+    print "AGE CLASS PV"
+    print age_class_pv_fe
+    print age_class_pv_ma
     
     """
     TODO: there is a problem with the last age class : in the paper it includes people from 95 to 100 years old. 
     However the program seperates the 100 years old and more from the others
     """
     
-#     #Plotting
-#     age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
-#     age_class_pv = age_class_pv['net_transfers']
-#     age_class_pv.columns = ['men' , 'women']
-# #     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
-# #     age_class_pv['total'] *= 1.0/2.0
-#     age_class_theory = xls.parse('Feuil1', index_col = 0)
-#       
-#     age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
-#     age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
-#     age_class_pv.plot(style = '--') ; plt.legend()
-#     plt.axhline(linewidth=2, color='black')
-#     plt.show()
+    #Plotting
+    age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
+    age_class_pv = age_class_pv['net_transfers']
+    age_class_pv.columns = ['men' , 'women']
+#     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
+#     age_class_pv['total'] *= 1.0/2.0
+    age_class_theory = xls.parse('Feuil1', index_col = 0)
+       
+    age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
+    age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
+    age_class_pv.plot(style = '--') ; plt.legend()
+    plt.axhline(linewidth=2, color='black')
+    plt.show()
     
      
 if __name__ == '__main__':

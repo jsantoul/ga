@@ -233,7 +233,7 @@ class Simulation(object):
         Returns the IPL induced by the simulation
         """
         IPL = self.aggregate_pv.compute_ipl(typ, net_gov_wealth = self.net_gov_wealth, net_gov_spendings = self.net_gov_spendings)
-        print IPL
+        return IPL
 
         
     def compute_gen_imbalance(self, typ):
@@ -258,7 +258,6 @@ class Simulation(object):
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
          
         future_gen_transfer = self.net_gov_spendings - self.net_gov_wealth - past_gen_transfer
-        print "check future_gen_transfer", future_gen_transfer
           
         #Computing the number of people of the unborn generation
         population_unborn_ma = self.cohorts.get_value((0,0, year_min+1), 'pop')
@@ -272,23 +271,17 @@ class Simulation(object):
         del population_dataframe[('actualization', 1)] #TODO : check if this line is necessary
         population_dataframe['unborn'] = population_unborn
         population_dataframe['mixed'] = population_dataframe[('pop', 0)] + population_dataframe[('pop', 1)]
-        print population_dataframe.head()
         population_dataframe[('actualization', 0)] *= population_dataframe['mixed']/population_dataframe['unborn']
  
-        print "check column combination"
-        print population_dataframe[("actualization", 0)]
-         
         #Computing the coefficient mu_1
         population_dataframe = population_dataframe.cumsum()        
         mu_1 = population_dataframe.get_value((0,year_max), ('actualization', 0))
-        print "mu_1 = ", mu_1
           
         #Computing the final imbalance coefficients
         population_unborn = population_unborn_ma + population_unborn_fe
         n_1 = future_gen_transfer/(mu_1*population_unborn) # = percapita_future_gen_transfer
         n_0 = (self.percapita_pv.get_value((0, 0, year_min), typ)/2 + 
                                self.percapita_pv.get_value((0, 1, year_min), typ)/2) # = actual_gen_transfer
-        print "n_0", n_0 
         imbalance = n_1 - n_0
         imbalance_ratio = n_1/n_0
         coefficients = [n_1, imbalance, imbalance_ratio]

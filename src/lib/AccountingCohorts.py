@@ -6,9 +6,8 @@ Created on 14 mai 2013
 @author: Jérôme SANTOUL
 '''
 from __future__ import division
-from pandas import DataFrame, read_csv, concat, ExcelFile, HDFStore
-from numpy import NaN, arange, hstack, array
-import os
+from pandas import concat
+from numpy import array
 from cohorte import Cohorts
 
 class AccountingCohorts(Cohorts):
@@ -154,10 +153,10 @@ class AccountingCohorts(Cohorts):
         ipl : float
             the value of the intertemporal public liability
         """
-        if net_gov_wealth is None:
-            net_gov_wealth = 0
-        if net_gov_spendings is None:
-            net_gov_spendings = 0
+#         if net_gov_wealth is None:
+#             net_gov_wealth = 0
+#         if net_gov_spendings is None:
+#             net_gov_spendings = 0
          
         year_min = array(list(self.index_sets['year'])).min()
         year_max = array(list(self.index_sets['year'])).max()
@@ -172,7 +171,6 @@ class AccountingCohorts(Cohorts):
         future_gen_dataframe = self.xs(0, level = 'age')
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
-        print "check future_gen_transfer", future_gen_transfer
         #Note : do not forget to eliminate values counted twice
         ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
         return ipl
