@@ -22,9 +22,6 @@ class AccountingCohorts(Cohorts):
     def __init__(self, data=None, index=None, columns=None, 
                  dtype=None, copy=False):
         super(AccountingCohorts, self).__init__(data, index, columns , dtype, copy)
-        '''
-        Constructor
-        '''
      
     def extract_generation(self, year, typ, age = None):
         """

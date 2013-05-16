@@ -90,7 +90,7 @@ class DataCohorts(Cohorts):
         self.update(df_tot)
 
 
-    def population_project(self, year_length = None, method = None):
+    def population_project(self, year_length = None, method = None, growth_rate = None):
         """
         Continuation of population to provide convergent present values
         
@@ -132,17 +132,24 @@ class DataCohorts(Cohorts):
         if method == 'exp_growth':
 #             TODO : finish this projection method. Add an argument, add checkpoint if growth rate is None
 #             find efficient way to do the growth operation
+            if growth_rate is None:
+                    raise Exception('a growth rate must be provided for the method')
+            
             last_pop = self.xs(last_year, level='year', axis=0)
             pop = DataFrame(self['pop'])
             years = range(last_year+1,new_last_year+1)
-#             self['dsct'] = grouped.transform(lambda x: 1/((1+r)**arange(nb_years)))
             list_df = [last_pop] * len(years) 
 
             pop = concat(list_df, keys = years, names =['year'])
             pop = pop.reorder_levels(['age','sex','year'], axis=0)
+            pop = Cohorts(pop)
+            pop.gen_grth(growth_rate)
+            pop['pop'] *= pop['grth']
+            del pop['grth']
+            
             combined = self.combine_first(pop)
             self.__init__(data = combined, columns = ['pop'])
-            pass
+
 
     def proj_tax(self, rate = None , discount_rate = None , typ = None, method = None):
         """
@@ -196,7 +203,28 @@ class DataCohorts(Cohorts):
             else:
                 NotImplementedError
 
-             
+    def compute_net_transfers(self, name = 'net_transfers', taxes_list = [], payments_list = []):
+        """
+        """
+
+        self.new_type(name)
+        self['total_taxes'] = 0
+        self['total_payments'] = 0
+        for typ in taxes_list:
+            if typ not in self._types:
+                self._nb_type += 1
+                self._types.append(typ)
+            self['total_taxes'] += hstack(self[typ])
+        
+        for typ in payments_list:
+                if typ not in self._types:
+                    self._nb_type += 1
+                    self._types.append(typ)
+                self['total_payments'] += hstack(self[typ])
+    
+        self[name] = self['total_taxes'] - self['total_payments']
+
+         
     def aggregate_generation_present_value(self, typ, discount_rate=None):
         """
         Computes the present value of one column for the whole generation
