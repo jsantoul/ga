@@ -196,7 +196,27 @@ class DataCohorts(Cohorts):
             else:
                 NotImplementedError
 
-             
+    def compute_net_transfers(self, name = 'net_transfers', taxes_list = [], payments_list = []):
+        """
+        """
+
+        self.new_type(name)
+        
+        for typ in taxes_list:
+            if typ not in self._types:
+                self._nb_type += 1
+                self._types.append(typ)
+            self['total_taxes'] += hstack(self[typ])
+        
+        for typ in payments_list:
+                if typ not in self._types:
+                    self._nb_type += 1
+                    self._types.append(typ)
+                self['total_payments'] += hstack(self[typ])
+    
+        self[name] = self['total_taxes'] - self['total_payments']
+
+         
     def aggregate_generation_present_value(self, typ, discount_rate=None):
         """
         Computes the present value of one column for the whole generation

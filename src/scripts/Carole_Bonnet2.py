@@ -20,45 +20,6 @@ from src import SRC_PATH
 
 def test():
     
-#     Previous attempt to fuse INSEE and the pop data of C Bonnet
-
-#     population = read_csv('C:\Users\Utilisateur\Documents\GitHub\ga\src\countries\France\sources\data_fr\pop.csv', sep=',')
-#     # print population.columns
-#     population = population.set_index(['age', 'sex'])
-#     population = population.stack()
-#     population = population.reset_index()
-#     population['level_2'] = population.level_2.convert_objects(convert_numeric=True)
-# 
-#     population['year'] = population['level_2']
-#     population['pop'] = population[0]
-#     del population['level_2']
-#     del population[0]
-#     population = population.set_index(['age', 'sex', 'year'])
-#     #Remove the years 2007 and beyond to ensure integrity when combined with INSEE data
-#     year = list(range(1991, 2007, 1))
-#     filter_year = array([x in year for x in population.index.get_level_values(2)])
-#     population = population.loc[filter_year, :]
-    
-    
-#     population.append_to_multiple(population_filename, "table", append = True)
-#     #Loading insee data
-#     projection = HDFStore('C:\Users\Utilisateur\Documents\GitHub\ga\src\countries\France\sources\data_fr\proj_pop_insee\proj_pop.h5', 'r')
-#     projection_dataframe = projection['/projpop0760_FECbasESPbasMIGbas']
-#  
-#     #Combining
-#     concatened = concat([population, projection_dataframe], verify_integrity = True)
-#     concatened = concatened.reset_index()
-#     concatened['year'] = concatened.year.convert_objects(convert_numeric=True)
-#     concatened = concatened.set_index(['age', 'sex', 'year'])
-#  
-#     #Saving as HDF5 file
-#     export = HDFStore('neo_population.h5')
-#     export.append('pop', concatened, data_columns = concatened.columns)
-#     export.close()
-#     export = HDFStore('neo_population.h5', 'r')
-
-
-
     country = "france"    
     population_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
                                            'data_fr', 'proj_pop_insee', 'proj_pop.h5')
@@ -80,47 +41,32 @@ def test():
     net_gov_wealth = -3217.7e+09 (unit : Franc Français (FF) of 1996)
     
     """
+
+    
+    #Setting parameters
+    year_length = 200
     r = 0.03
     g = 0.01
     net_gov_wealth = -3217.7e+09
     net_gov_spendings = 0
-    simulation.set_discount_rate(r)
-    simulation.set_growth_rate(g)
-    simulation.set_gov_wealth(net_gov_wealth)
-    simulation.set_gov_spendings(net_gov_spendings)
-    
-    #Setting parameters
-    year_length = 200
     simulation.set_population_projection(year_length=year_length, method="exp_growth")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r)        
     simulation.create_cohorts()
-
-#     print simulation.cohorts.head()
-#     print simulation.cohorts._types
-
-#     print simulation.cohorts._types
-
+    simulation.set_gov_wealth(net_gov_wealth)
+    simulation.set_gov_spendings(net_gov_spendings)
 
     #Calculating net transfers
-    #Net_transfers = money recieved from the state minus tax paid (state point of view)
-    
+    #Net_transfers = tax paid to the state minus money recieved from the state
+    #TODO: transform this in a method
     simulation.cohorts['total_taxes'] = 0
     simulation.cohorts['total_payments'] = 0
     
-    set_taxes = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
-    set_payments = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
+    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
+    payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
     
-    for typ in set_taxes:
-        simulation.cohorts['total_taxes'] += hstack(simulation.cohorts[typ])
-    for typ in set_payments:
-        simulation.cohorts['total_payments'] += hstack(simulation.cohorts[typ])
-    
-    simulation.cohorts['net_transfers'] = simulation.cohorts['total_taxes'] - simulation.cohorts['total_payments']
-    simulation.cohorts._types = ([u'tva', u'tipp', u'cot', u'irpp', u'impot',
-                                   u'property', u'chomage', u'retraite', 
-                                   u'revsoc', u'maladie', u'educ', u'net_transfers'])
+    simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
     
     
     """
@@ -128,9 +74,9 @@ def test():
     """
     #Generating generationnal accounts
     simulation.create_present_values(typ = 'net_transfers')
-#     print "PER CAPITA PV"
-#     print simulation.cohorts._pv_percapita.xs(0, level = 'age').head()
-#     print simulation.cohorts._pv_percapita.xs((0, 2007), level = ['sex', 'year']).head()
+    print "PER CAPITA PV"
+    print simulation.percapita_pv.xs(0, level = 'age').head()
+    print simulation.percapita_pv.xs((0, 2007), level = ['sex', 'year']).head()
 
 
     # Calculating the Intertemporal Public Liability
@@ -153,13 +99,9 @@ def test():
     age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
     age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
     print "AGE CLASS PV"
-    print age_class_pv_fe
-    print age_class_pv_ma
+    print age_class_pv_fe.head()
+    print age_class_pv_ma.head()
     
-    """
-    TODO: there is a problem with the last age class : in the paper it includes people from 95 to 100 years old. 
-    However the program seperates the 100 years old and more from the others
-    """
     
     #Plotting
     age_class_pv = cohorts_age_class.xs(2007, level = "year").unstack(level="sex")
