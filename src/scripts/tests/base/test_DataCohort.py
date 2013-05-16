@@ -19,16 +19,23 @@ from src.scripts.tests.utils import (create_testing_population_dataframe,
          
 def test_population_projection():
     # Create cohorts
-    population = create_empty_population_dataframe(2001, 2061)
+    start_data = 2001
+    end_data = 2061
+    population = create_empty_population_dataframe(start_data, end_data)
     cohorts = DataCohorts(data = population, columns = ['pop'])
 
     # Complete population projection
-    year_length = 200
-    method = 'stable'   
-    cohorts.population_project(year_length, method = method)
-    test_value = cohorts.get_value((0,0,2161), "pop")
-#    print test_value
-    assert test_value == 1
+    year_length = 100
+    end_project = start_data + year_length
+    method = 'exp_growth'   
+    growth_rate = n = 0.05
+    cohorts.population_project(year_length, method = method, growth_rate = n)
+    
+    year_control = 2082
+    control_value = (1+n)**(year_control - end_data - 1)
+    test_value = cohorts.get_value((0,0,2081), "pop")
+    assert test_value == control_value
+
 
 def test_fill_cohort():   
     population = create_empty_population_dataframe(2001, 2061)
@@ -37,6 +44,19 @@ def test_fill_cohort():
     cohorts_test.fill(profiles, year = None)
     test_value = cohorts_test.get_value((0,0,2060), 'tax')
     assert test_value == -1
+    
+def test_compute_net_transfers():
+    population = create_empty_population_dataframe(2001, 2061)
+    profiles = create_constant_profiles_dataframe(population, tax = 1, subsidies = 0.5)
+    tax = ['tax']
+    subsidy = ['subsidies']
+    cohorts_test = DataCohorts(data = population, columns = ['pop'])
+    cohorts_test.fill(profiles, year = None)
+    cohorts_test.compute_net_transfers(taxes_list = tax, payments_list = subsidy)
+    test_value = cohorts_test.get_value((0,0,2060), 'net_transfers')
+    assert test_value == 0.5
+    
+    pass
 
 def test_tax_projection():
 
