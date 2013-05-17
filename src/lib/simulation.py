@@ -24,6 +24,7 @@ class Simulation(object):
         self.population_projection = None
         self.tax_projection = None
         self.growth_rate = None
+        self.population_growth_rate = None
         self.discount_rate = None
         self.country = None
         self.net_gov_wealth = 0
@@ -137,6 +138,18 @@ class Simulation(object):
         """
         self.growth_rate = g
 
+    def set_population_growth_rate(self, n=0):
+        """
+        Set the growth rate of the population
+        
+        Parameters
+        ----------
+        
+        r : float, default set to 0
+            The growth rate
+        """
+        self.population_growth_rate = n
+        
     def set_population_projection(self, **kwargs):
         """
         Set population projection parameters
@@ -204,7 +217,7 @@ class Simulation(object):
         # Complete population projection
         year_length = self.population_projection["year_length"]
         method = self.population_projection["method"]        
-        cohorts.population_project(year_length, method = method)
+        cohorts.population_project(year_length, method = method, growth_rate = self.population_growth_rate)
         
         # Generate discount factor and growth factor
         cohorts.gen_dsct(self.discount_rate)
