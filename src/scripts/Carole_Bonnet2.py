@@ -94,7 +94,7 @@ def test():
     
     
     #Creating age classes
-    cohorts_age_class = AccountingCohorts(simulation.percapita_pv.create_age_class(step = 5))
+    cohorts_age_class = AccountingCohorts(simulation.create_age_class(typ = 'net_transfers', step = 5))
     cohorts_age_class._types = [u'tva', u'tipp', u'cot', u'irpp', u'impot', u'property', u'chomage', u'retraite', u'revsoc', u'maladie', u'educ', u'net_transfers']
     age_class_pv_fe = cohorts_age_class.xs((1, 2007), level = ['sex', 'year'])
     age_class_pv_ma = cohorts_age_class.xs((0, 2007), level = ['sex', 'year'])
