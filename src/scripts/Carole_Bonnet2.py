@@ -47,10 +47,10 @@ def test():
     year_length = 200
     r = 0.03
     g = 0.01
-    n = 0.01
+    n = 0.00
     net_gov_wealth = -3217.7e+09
     net_gov_spendings = 0
-    simulation.set_population_projection(year_length=year_length, method="exp_growth")
+    simulation.set_population_projection(year_length=year_length, method="stable")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r) 

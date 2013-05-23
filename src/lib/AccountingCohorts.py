@@ -150,10 +150,10 @@ class AccountingCohorts(Cohorts):
         ipl : float
             the value of the intertemporal public liability
         """
-#         if net_gov_wealth is None:
-#             net_gov_wealth = 0
-#         if net_gov_spendings is None:
-#             net_gov_spendings = 0
+        if net_gov_wealth is None:
+            net_gov_wealth = 0
+        if net_gov_spendings is None:
+            net_gov_spendings = 0
          
         year_min = array(list(self.index_sets['year'])).min()
         year_max = array(list(self.index_sets['year'])).max()
