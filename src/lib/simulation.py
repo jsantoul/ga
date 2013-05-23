@@ -234,7 +234,7 @@ class Simulation(object):
         cohorts.gen_grth(self.growth_rate)
 
         # Fill profiles
-        cohorts.fill(self.profiles)
+        cohorts._fill(self.profiles)
         method = self.tax_projection["method"]
         rate = self.tax_projection["rate"]
         cohorts.proj_tax(rate=rate, method=method)

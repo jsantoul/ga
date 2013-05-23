@@ -37,7 +37,7 @@ class DataCohorts(Cohorts):
         
         
                 
-    def fill(self, df, year = None):
+    def _fill(self, df, year = None):
         """
         Takes age, sex profile (per capita transfers) found in df
         to fill year 'year' or all empty years if year is None
