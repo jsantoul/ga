@@ -8,8 +8,8 @@ Created on 14 mai 2013
 from __future__ import division
 from pandas import DataFrame, read_csv, concat, ExcelFile, HDFStore
 from numpy import NaN, arange, hstack, array
-from src.lib.AccountingCohorts import AccountingCohorts
-from cohorte import Cohorts
+from src.lib.cohorts.accounting_cohorts import AccountingCohorts
+from src.lib.cohorts.cohort import Cohorts
 
 class DataCohorts(Cohorts):
     '''
@@ -84,7 +84,9 @@ class DataCohorts(Cohorts):
             else:
                 df_tot.append(df_insert, ignore_index=True)
                 df_tot = df_tot.set_index(['age','sex','year'])
-
+        
+        print df_tot
+        print len(df_tot)
         self.update(df_tot)
 
 

@@ -8,7 +8,7 @@ Created on 14 mai 2013
 from __future__ import division
 from pandas import concat
 from numpy import array
-from cohorte import Cohorts
+from src.lib.cohorts.cohort import Cohorts
 
 class AccountingCohorts(Cohorts):
     '''

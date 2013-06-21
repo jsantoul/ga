@@ -9,7 +9,7 @@
 from __future__ import division
 import os
 from src.lib.simulation import Simulation
-from src.lib.AccountingCohorts import AccountingCohorts
+from src.lib.cohorts.accounting_cohorts import AccountingCohorts
 from pandas import read_csv, HDFStore, concat, ExcelFile, Series
 from numpy import array, hstack
 import matplotlib.pyplot as plt

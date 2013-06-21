@@ -7,10 +7,7 @@ Created on 20 mars 2013
 '''
 from __future__ import division
 from pandas import HDFStore
-from DataCohorts import DataCohorts
-from AccountingCohorts import AccountingCohorts
-from numpy import array
-from pandas import concat
+from cohorts.data_cohorts import DataCohorts
 
 
 class Simulation(object):
