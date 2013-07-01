@@ -209,7 +209,7 @@ class Simulation(object):
         self.cohorts.compute_net_transfers(name, taxes_list, payments_list)
 
 #===============================================================================
-# Set of methods to perform the simulation itself
+# Set of methods to conduct the simulation itself
 #===============================================================================
 
 

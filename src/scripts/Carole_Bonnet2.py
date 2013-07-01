@@ -10,7 +10,7 @@ from __future__ import division
 import os
 from src.lib.simulation import Simulation
 from src.lib.cohorts.accounting_cohorts import AccountingCohorts
-from pandas import read_csv, HDFStore, concat, ExcelFile, Series
+from pandas import read_csv, HDFStore, concat, ExcelFile, DataFrame
 from numpy import array, hstack
 import matplotlib.pyplot as plt
 from src import SRC_PATH
@@ -30,9 +30,12 @@ def test():
 
     simulation = Simulation()
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
-        
+    
     simulation.load_population(population_filename, population_scenario)
     simulation.load_profiles(profiles_filename)
+    uniform = (164.3-157.7-285.4+3.1+15.4-0.7+0.4-15.7-67.6-24.6)*1e+09
+    simulation.profiles['uniform'] = uniform/60e+06
+    
     xls = ExcelFile(CBonnet_results)
     """
     Hypothesis set #1 : 
@@ -44,17 +47,21 @@ def test():
 
     
     #Setting parameters
-    year_length = 200
+    year_length = 250
     r = 0.03
     g = 0.01
     n = 0.00
     net_gov_wealth = -3217.7e+09
     net_gov_spendings = 0
+#     for t in range(251):
+#         year_gov_spending = -1*(164.3-157.7-285.4+3.1+15.4-0.7+0.4-15.7-67.6-24.6)*1e+09*((1+g)/(1+r))**t
+#         net_gov_spendings += year_gov_spending
+    
     simulation.set_population_projection(year_length=year_length, method="stable")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r) 
-    simulation.set_population_growth_rate(n)      
+    simulation.set_population_growth_rate(n)
     simulation.create_cohorts()
     simulation.set_gov_wealth(net_gov_wealth)
     simulation.set_gov_spendings(net_gov_spendings)
@@ -63,7 +70,7 @@ def test():
     #Net_transfers = tax paid to the state minus money recieved from the state
 
     
-    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
+    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property', 'uniform']
     payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
     
     simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
@@ -116,7 +123,43 @@ def test():
     age_class_pv.plot(style = '--') ; plt.legend()
     plt.axhline(linewidth=2, color='black')
     plt.show()
+
+def show_data():
+    
+    country = "france"    
+    population_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
+                                           'data_fr', 'proj_pop_insee', 'proj_pop.h5')
+    profiles_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
+                                         'data_fr','profiles.h5')
+
+    simulation = Simulation()
+    population_scenario = "projpop0760_FECbasESPbasMIGbas"
+    
+    simulation.load_population(population_filename, population_scenario)
+    simulation.load_profiles(profiles_filename)
+    
+    simulation.restricted_pop1 = simulation.population.iloc[:101,:]
+    simulation.restricted_pop2 = simulation.population.iloc[5454:5555,:]
+    
+    
+    simulation.restricted_pop = concat([simulation.restricted_pop1, simulation.restricted_pop2])
+    simulation.profiles.reset_index(inplace=True); simulation.restricted_pop.reset_index(inplace=True)
+    simulation.restricted_pop['year'] = 1996
+    print simulation.restricted_pop.head()
+    print simulation.profiles.head()
+    
+    simulation.profiles['pop'] = simulation.restricted_pop['pop'] 
+    simulation.profiles.set_index(['age', 'sex', 'year'], inplace=True)
+    print simulation.profiles.loc[:, ['pop', 'tva']].tail(10).to_string()
+
+    simulation.profiles['tva'] *= simulation.profiles['pop']
+    print simulation.profiles.loc[:, ['pop', 'tva']].tail(10).to_string()
+    
+    agreg_irpp = simulation.profiles.cumsum().get_value((100,1,1996), 'tva')
+    agreg_pop = simulation.profiles.cumsum().get_value((100,1,1996), 'pop')
+    print agreg_irpp, agreg_pop
     
      
 if __name__ == '__main__':
     test()
+#     show_data()

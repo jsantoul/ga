@@ -1,9 +1,9 @@
 # -*- coding:utf-8 -*-
-# Copyright © 2012 Clément Schaff, Mahdi Ben Jelloul
+# Copyright © 2012 Clément Schaff, Mahdi Ben Jelloul, Jérôme Santoul
 '''
 Created on May 22, 2012
 
-@author: Clément Schaff, Mahdi Ben Jelloul
+@author: Clément Schaff, Mahdi Ben Jelloul, Jérôme Santoul
 '''
 
 from __future__ import division
