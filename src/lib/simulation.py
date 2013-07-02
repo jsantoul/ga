@@ -305,6 +305,7 @@ class Simulation(object):
         population_dataframe.gen_actualization(self.growth_rate, self.discount_rate)
         population_dataframe = population_dataframe.unstack(level='sex')
         del population_dataframe[('actualization', 1)] #TODO : check if this line is necessary
+        
         population_dataframe['unborn'] = population_unborn
         population_dataframe['mixed'] = population_dataframe[('pop', 0)] + population_dataframe[('pop', 1)]
         population_dataframe[('actualization', 0)] *= population_dataframe['mixed']/population_dataframe['unborn']
@@ -312,7 +313,7 @@ class Simulation(object):
         #Computing the coefficient mu_1
         population_dataframe = population_dataframe.cumsum()        
         mu_1 = population_dataframe.get_value((0,year_max), ('actualization', 0))
-          
+        
         #Computing the final imbalance coefficients
         population_unborn = population_unborn_ma + population_unborn_fe
         n_1 = future_gen_transfer/(mu_1*population_unborn) # = percapita_future_gen_transfer

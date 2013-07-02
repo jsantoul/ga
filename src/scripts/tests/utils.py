@@ -7,8 +7,8 @@ Created on 26 avr. 2013
 
 from pandas import DataFrame, merge
 from numpy import arange
-from src.lib.cohorte import Cohorts
-from src.lib.DataCohorts import DataCohorts
+from src.lib.cohorts.cohort import Cohorts
+from src.lib.cohorts.data_cohorts import DataCohorts
 
 #===============================================================================
 # Some function to generate fake data for testing
@@ -99,7 +99,7 @@ def create_neutral_profiles_cohort(population):
     g = 0.0
     r = 0.0 
     cohort = DataCohorts(population_dataframe)
-    cohort.fill(profile)
+    cohort._fill(profile)
     cohort.loc[cohort.index.get_level_values(0) >= 0,'tax'] = -1
     cohort.loc[cohort.index.get_level_values(0) >= 50,'tax'] = 1
     cohort.loc[cohort.index.get_level_values(0) == 100,'tax'] = 0

@@ -33,8 +33,8 @@ def test():
     
     simulation.load_population(population_filename, population_scenario)
     simulation.load_profiles(profiles_filename)
-    uniform = (164.3-157.7-285.4+3.1+15.4-0.7+0.4-15.7-67.6-24.6)*1e+09
-    simulation.profiles['uniform'] = uniform/60e+06
+#     uniform = (164.3-157.7-285.4+3.1+15.4-0.7+0.4-15.7-67.6-24.6)*1e+09
+#     simulation.profiles['uniform'] = uniform/60e+06
     
     xls = ExcelFile(CBonnet_results)
     """
@@ -53,10 +53,12 @@ def test():
     n = 0.00
     net_gov_wealth = -3217.7e+09
     net_gov_spendings = 0
-#     for t in range(251):
-#         year_gov_spending = -1*(164.3-157.7-285.4+3.1+15.4-0.7+0.4-15.7-67.6-24.6)*1e+09*((1+g)/(1+r))**t
-#         net_gov_spendings += year_gov_spending
-    
+    for t in range(251):
+        year_gov_spending = (2.96+2.57+3.59+4.58+3.31+0.61+2.71+41.99+1.53+10.04+11.72+0.56+8.80+
+                             0.36+1.02+0.26+25.37+16.82+0.46+0.41+7.65+10.0)*6.55957*0.85*1e+09*(
+                            (1+g)/(1+r))**t
+        net_gov_spendings += year_gov_spending
+    print net_gov_spendings
     simulation.set_population_projection(year_length=year_length, method="stable")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
@@ -70,7 +72,7 @@ def test():
     #Net_transfers = tax paid to the state minus money recieved from the state
 
     
-    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property', 'uniform']
+    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
     payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
     
     simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
