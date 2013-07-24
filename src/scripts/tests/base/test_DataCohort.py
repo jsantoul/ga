@@ -8,8 +8,7 @@ Created on 14 mai 2013
 @author: Jérôme SANTOUL
 '''
 import nose
-from src.lib.DataCohorts import DataCohorts
-from numpy import array
+from src.lib.cohorts.data_cohorts import DataCohorts
 from src.scripts.tests.utils import (create_testing_population_dataframe,
                                      create_empty_population_dataframe,
                                      create_constant_profiles_dataframe,
@@ -41,7 +40,7 @@ def test_fill_cohort():
     population = create_empty_population_dataframe(2001, 2061)
     profiles = create_constant_profiles_dataframe(population, tax = -1, subsidies = 0.5)
     cohorts_test = DataCohorts(data = population, columns = ['pop'])
-    cohorts_test.fill(profiles, year = None)
+    cohorts_test._fill(profiles, year = None)
     test_value = cohorts_test.get_value((0,0,2060), 'tax')
     assert test_value == -1
     
@@ -51,7 +50,7 @@ def test_compute_net_transfers():
     tax = ['tax']
     subsidy = ['subsidies']
     cohorts_test = DataCohorts(data = population, columns = ['pop'])
-    cohorts_test.fill(profiles, year = None)
+    cohorts_test._fill(profiles, year = None)
     cohorts_test.compute_net_transfers(taxes_list = tax, payments_list = subsidy)
     test_value = cohorts_test.get_value((0,0,2060), 'net_transfers')
     assert test_value == 0.5
@@ -68,7 +67,7 @@ def test_tax_projection():
     year_length = 200
     method = 'stable'   
     cohort.population_project(year_length, method = method)
-    cohort.fill(profile)
+    cohort._fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'per_capita')
 #    print cohort
@@ -86,7 +85,7 @@ def test_tax_projection_aggregated():
     g = 0.5
     r = 0.0 
     cohort = DataCohorts(population)
-    cohort.fill(profile)
+    cohort._fill(profile)
     typ = None
     cohort.proj_tax(g, r, typ,  method = 'aggregate')
     test_value = cohort.get_value((0,1,2002), 'tax')

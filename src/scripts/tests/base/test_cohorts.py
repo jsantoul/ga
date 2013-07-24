@@ -8,7 +8,8 @@
 # https://nose.readthedocs.org/en/latest/testing.html
 
 import nose
-from src.lib.cohorte import Cohorts
+from src.lib.cohorts.cohort import Cohorts
+from src.lib.cohorts.data_cohorts import DataCohorts
 from numpy import array
 from src.scripts.tests.utils import (create_testing_population_dataframe,
                                      create_empty_population_dataframe,
@@ -60,8 +61,8 @@ def test_filter_value():
     n = 0.05
     population = create_testing_population_dataframe(year_start=2001, year_end=2061, rate=n)
     profile = create_constant_profiles_dataframe(population, tax=-1, sub=0.5)
-    cohort = Cohorts(population)
-    cohort.fill(profile)
+    cohort = DataCohorts(population)
+    cohort._fill(profile)
     r = 0.0
     g = 0.05
     column = None

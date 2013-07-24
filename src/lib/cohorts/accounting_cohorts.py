@@ -9,6 +9,7 @@ from __future__ import division
 from pandas import concat
 from numpy import array
 from src.lib.cohorts.cohort import Cohorts
+import matplotlib.pyplot as plt
 
 class AccountingCohorts(Cohorts):
     '''
@@ -141,7 +142,7 @@ class AccountingCohorts(Cohorts):
         res =  concat(pieces, keys = [0,1], names = ["sex"] )
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
-        return res            
+        return AccountingCohorts(res)            
  
     def compute_ipl(self, typ, net_gov_wealth = None, net_gov_spendings = None):
         """
@@ -184,7 +185,24 @@ class AccountingCohorts(Cohorts):
         #Note : do not forget to eliminate values counted twice
         ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
         return ipl
-     
+
+
+    def accounting_plot(self, step=5, typ=None):
+        """
+        Plot the columns of the accounting cohort after creating age classes. This a very sensitive
+        script and is not optimized.
+        TODO: optimize, ensure that it can plot a lot of things with minimal difficulty.
+        """
+        if typ is None:
+            raise Exception('a columns to plot should be specified')
+        age_class_plot = self.create_age_class(step).xs(self._year_min, level = "year").unstack(level="sex")
+        age_class_plot = age_class_plot[typ]
+        age_class_plot.columns = ['men' , 'women']
+           
+        age_class_plot.plot(style = '--') ; plt.legend()
+        plt.axhline(linewidth=2, color='black')
+        plt.show()
+    
 
 if __name__ == '__main__':
     pass
