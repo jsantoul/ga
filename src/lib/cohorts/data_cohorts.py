@@ -85,8 +85,8 @@ class DataCohorts(Cohorts):
                 df_tot.append(df_insert, ignore_index=True)
                 df_tot = df_tot.set_index(['age','sex','year'])
         
-        print df_tot
-        print len(df_tot)
+#         print df_tot
+#         print len(df_tot)
         self.update(df_tot)
 
 
@@ -149,9 +149,12 @@ class DataCohorts(Cohorts):
             self.__init__(data = combined, columns = ['pop'])
 
 
-    def proj_tax(self, rate = None , discount_rate = None , typ = None, method = None):
+    def proj_tax(self, rate = None , inflation_rate = None , typ = None, method = None, payments_list=[]):
         """
-        Projects taxes either per_capita or aggregate at the constant growth_rate rate
+        Projects taxes either per_capita or aggregate at the constant growth_rate rate or desynchronized.
+        The desynchronized method projects taxes paid by citizen at the growth rate and government allowances 
+        at the inflation rate. If the method chosed is desynchronized : typ should NOT be None 
+        but the list of taxes.
         
         Parameters
         ----------        
@@ -163,30 +166,44 @@ class DataCohorts(Cohorts):
             which will be expanded
         method : str
             the method used for the projection 
-            the name has to be either 'per_capita' or 'aggregate'
+            the name has to be either 'per_capita' or 'aggregate' or 'desynchronized'
         """
         
         if rate is None:
             raise Exception('no growth_rate provided')
-        if discount_rate is None:
+        if inflation_rate is None:
             self.proj_tax(rate , 0 , typ, method)
             return
-        if method is None:
+        if method is None or not method in ['aggregate', 'per_capita', 'desynchronized']:
             raise Exception('a method should be specified')
         if typ is None:
             for typ in self._types:
-                self.proj_tax(rate , discount_rate , typ, method)
+                self.proj_tax(rate , inflation_rate , typ, method)
             return
-        if typ not in self.columns:
-            raise Exception('this is not a column of cohort')
+#         if typ not in self.columns:
+#             raise Exception('this is not a column of cohort')
         else:
             self.gen_grth(rate)
             if method == "per_capita":
                 self[typ] = self[typ]*self['grth']
                 
+            if method == 'desynchronized':
+                for tax in typ:
+                    self[tax] *= self['grth']
+                
+                self['inflation'] = NaN
+                grouped = self.groupby(level = ['sex', 'age'])['inflation']
+                nb_years = len(self.index_sets['year'])
+                self['inflation'] = grouped.transform(lambda x: ((1+inflation_rate)**(arange(nb_years))))
+                
+                for payment in payments_list:
+                    self[payment] *= self['inflation']
+                
+                del self['inflation']
+                
             if method == "aggregate":
                 typ_years = self._types_years[typ]
-                last_typ_year = max(typ_years)         
+                last_typ_year = max(typ_years)
                 last_typ_pop = self.xs(last_typ_year, level='year', axis=0)  
                 years = self.index_sets['year']
                 last_year = max(years)
@@ -198,8 +215,8 @@ class DataCohorts(Cohorts):
                 
                 self[typ] = self[typ]*self['grth']*frozen_pop["pop"]/self["pop"]
                 # print self
-            else:
-                NotImplementedError
+#             else:
+#                 raise NotImplementedError
 
     def compute_net_transfers(self, name = 'net_transfers', taxes_list = [], payments_list = []):
         """

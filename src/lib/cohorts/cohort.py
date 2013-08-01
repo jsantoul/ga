@@ -36,7 +36,7 @@ class Cohorts(DataFrame):
             self._types_years = dict()   # TODO: merge this dict with the previous list
             self._year_min = None
             self._year_max = None
-            
+            self.name = None
             self.post_init()
 
 
@@ -168,7 +168,7 @@ class Cohorts(DataFrame):
         self['grth'] = NaN
         grouped = self.groupby(level = ['sex', 'age'])['grth']
         nb_years = len(self.index_sets['year'])
-        self['grth'] = grouped.transform(lambda x: (1+g)**(arange(nb_years)))
+        self['grth'] = grouped.transform(lambda x: ((1+g)**(arange(nb_years))))
 
     def gen_dsct(self, r):
         self._discount_rate = r 

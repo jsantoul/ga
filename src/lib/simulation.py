@@ -7,6 +7,8 @@ Created on 20 mars 2013
 '''
 from __future__ import division
 from pandas import HDFStore
+from pandas.io.parsers import ExcelFile
+
 from cohorts.data_cohorts import DataCohorts
 
 
@@ -15,20 +17,36 @@ class Simulation(object):
     A simulation object contains all parameters to compute a simulation 
     """
     def __init__(self):
+        # These attributes are the core data of a simulation
         super(Simulation, self).__init__()
-        self.population = None
         self.profiles = None
         self.population_projection = None
         self.tax_projection = None
-        self.growth_rate = None
+        self.year_length = 0
+
+        # Base hypothesis set :
+        self.population = None
+        self.growth_rate = None #Growth rate of the economy
         self.population_growth_rate = None
         self.discount_rate = None
         self.country = None
-        self.net_gov_wealth = 0
         self.net_gov_spendings = 0
         self.cohorts = None #A DataCohorts object
         self.aggregate_pv = None #An AccountingCohorts object
         self.percapita_pv = None #An AccountingCohorts object
+        self.net_gov_wealth = 0
+       
+        # Duplicated attributes to compute elasticities (alt stands for alternate):
+        self.population_alt = None
+        self.growth_rate_alt = None
+        self.discount_rate_alt = None
+        self.net_gov_spendings_alt = 0
+        self.population_growth_rate_alt = None
+        self.net_gov_wealth_alt = 0
+        self.cohorts_alt = None #A DataCohorts object
+        self.aggregate_pv_alt = None #An AccountingCohorts object
+        self.percapita_pv_alt = None #An AccountingCohorts object        
+
         
 #===============================================================================
 # Set of methods to enter various parameters of the simulation object
@@ -52,7 +70,7 @@ class Simulation(object):
         store_pop.close()
         return choices
         
-    def set_population(self, dataframe):
+    def set_population(self, dataframe, default=True):
         """
         Set population dataframe
         
@@ -62,10 +80,13 @@ class Simulation(object):
                     Dataframe conaining the population
         
         """
-        self.population = dataframe 
+        if default:
+            self.population = dataframe
+        else:
+            self.population_alt = dataframe 
         
     
-    def load_population(self, population_filename, population_scenario):
+    def load_population(self, population_filename, population_scenario, default=True):
         """
         Load population form a hdf5 file
         
@@ -80,7 +101,7 @@ class Simulation(object):
         """
         store_pop = HDFStore(population_filename,'r')
         dataframe = store_pop[population_scenario]
-        self.set_population(dataframe)
+        self.set_population(dataframe, default=default)
         store_pop.close()
 
 
@@ -94,22 +115,61 @@ class Simulation(object):
         """
         self.profiles = dataframe
     
-    def set_gov_spendings(self, G):
+    def set_gov_spendings(self, G, default=True, compute=False):
         """
-        Set the value of unventilated spendings of the government
+        Set the value of unventilated spendings of the government. To perform the computation, 
+        you must define first the value of the growth and discount rate.
+        
+        Parameters
+        ----------
         
         G : Number
+        default : True or False
+                  indicates wether this are the spendings for the default hypotheses set or alternate one
+        compute : True/False
+                  use this option if you have the spendings only for the reference year. It will compute
+                  the net present value of spendings for the entire time.
         """
-        self.net_gov_spendings = G
+        if default:
+            g = self.growth_rate
+            r = self.discount_rate
+        else:
+            g = self.growth_rate_alt
+            r = self.discount_rate_alt
+            
+        if compute:
+            net_gov_spendings = 0
+            for t in range(1, self.year_length+1):
+                year_gov_spending = G*((1+g)/(1+r))**t
+                net_gov_spendings += year_gov_spending
+        else:
+            net_gov_spendings = G
+        
+        if default:
+            self.net_gov_spendings = net_gov_spendings
+        else:
+            self.net_gov_spendings_alt = net_gov_spendings
     
-    def set_gov_wealth(self, W):
+    def set_gov_wealth(self, W, default=True):
+        """
+        Set the present value of the net government wealth
+        default : True or False
+                  indicates wether this is the wealth for the default hypotheses set or 
+                  alternate one
+        """
+        if default:
+            self.net_gov_wealth = W
+        else:
+            self.net_gov_wealth_alt = W
+            
+        
+    def set_year_length(self, nb_year = 300):
         """
         Set the present value of the net government wealth
         """
-        self.net_gov_wealth = W
-    
+        self.year_length = nb_year
 
-    def set_discount_rate(self, r=0):
+    def set_discount_rate(self, r=0, default=True):
         """
         Set discount rate
         
@@ -118,35 +178,52 @@ class Simulation(object):
         
         r : float, default set to 0
             The discount rate
+        default : True or False
+                  indicates wether this is the discount rate for the default hypotheses set or 
+                  alternate one
         
         """
-        self.discount_rate = r
+        if default:
+            self.discount_rate = r
+        else:
+            self.discount_rate_alt = r
         
         
-    def set_growth_rate(self, g=0):
+    def set_growth_rate(self, g=0, default=True):
         """
         Set economy's BGP growth rate
         
         Parameters
         ----------
         
-        r : float, default set to 0
+        g : float, default set to 0
             The growth rate
-        """
-        self.growth_rate = g
+        default : True or False
+                  indicates wether this is the growth rate for the default hypotheses set or alternate one
 
-    def set_population_growth_rate(self, n=0):
+        """
+        if default:
+            self.growth_rate = g
+        else:
+            self.growth_rate_alt = g
+
+    def set_population_growth_rate(self, n=0, default=True):
         """
         Set the growth rate of the population
         
         Parameters
         ----------
         
-        r : float, default set to 0
+        n : float, default set to 0
             The growth rate
+        default : True or False
+                  indicates wether this is the growth rate for the default hypotheses set or alternate one
         """
-        self.population_growth_rate = n
-        
+        if default:
+            self.population_growth_rate = n
+        else:
+            self.population_growth_rate_alt = n
+            
     def set_population_projection(self, **kwargs):
         """
         Set population projection parameters
@@ -198,70 +275,115 @@ class Simulation(object):
         dataframe = store['profiles']
         self.set_profiles(dataframe)
         
-    def compute_net_transfers(self, name = 'net_transfers', taxes_list = None, payments_list = None):
+    def compute_net_transfers(self, name = 'net_transfers', taxes_list = None, payments_list = None, default=True):
         if taxes_list is None:
             taxes_list = []
             raise Warning('No list of taxes provided, using an empty list for computation')
         if payments_list is None:
             payments_list = []
             raise Warning('No list of subsidies or payments provided, using an empty list for computation')
-        
-        self.cohorts.compute_net_transfers(name, taxes_list, payments_list)
+        if default:
+            self.cohorts.compute_net_transfers(name, taxes_list, payments_list)
+        else:
+            self.cohorts_alt.compute_net_transfers(name, taxes_list, payments_list)
 
 #===============================================================================
 # Set of methods to conduct the simulation itself
 #===============================================================================
 
 
-    def create_cohorts(self):
+    def create_cohorts(self, default = True):
         """
         Create cohorts according to population, tax and transfers,
         and state expenses projection    
         """
-        population = self.population
+        if default:
+            population = self.population
+        else:
+            population = self.population_alt
+            
         cohorts = DataCohorts(data = population, columns = ['pop'])
         
-        # Complete population projection
+        # Loading parameters to create a cohort :
         year_length = self.population_projection["year_length"]
+
+        if default:
+            growth_rate = self.growth_rate
+            discount_rate = self.discount_rate
+            pop_growth_rate = self.population_growth_rate
+        else:
+            growth_rate = self.growth_rate_alt
+            discount_rate = self.discount_rate_alt    
+            pop_growth_rate = self.population_growth_rate_alt
+            
+        # Complete population projection
         method = self.population_projection["method"]        
-        cohorts.population_project(year_length, method = method, growth_rate = self.population_growth_rate)
+        cohorts.population_project(year_length, method = method, growth_rate = pop_growth_rate)
         
         # Generate discount factor and growth factor
-        cohorts.gen_dsct(self.discount_rate)
-        cohorts.gen_grth(self.growth_rate)
+        cohorts.gen_dsct(discount_rate)
+        cohorts.gen_grth(growth_rate)
 
         # Fill profiles
         cohorts._fill(self.profiles)
         method = self.tax_projection["method"]
-        rate = self.tax_projection["rate"]
-        cohorts.proj_tax(rate=rate, method=method)
+        if method == 'desynchronized':
+            taxes_list = self.tax_projection["typ"]
+            payments_list = self.tax_projection["payments_list"]
+            inflation_rate = self.tax_projection['inflation_rate']
+            cohorts.proj_tax(rate=growth_rate, inflation_rate=inflation_rate, typ = taxes_list, method=method, payments_list = payments_list)
+        else: cohorts.proj_tax(rate=growth_rate, method=method)
 
         # Project net taxes TOOD: see MainWindow widget
-        self.cohorts = cohorts
+        if default:
+            self.cohorts = cohorts
+            self.cohorts.name = 'cohorte'
+        else:
+            self.cohorts_alt = cohorts
+            self.cohorts_alt.name = "cohorte_alternative"
         
     
-    def create_present_values(self, typ):
+    def create_present_values(self, typ, default=True):
         """
         Create aggregated and per capita present values of net transfers according to the given cohort
         and state expenses projection 
         """
-        self.aggregate_pv = self.cohorts.aggregate_generation_present_value(typ, discount_rate = self.discount_rate)
-        self.aggregate_pv['pop'] = self.cohorts['pop']
-        self.percapita_pv = self.cohorts.per_capita_generation_present_value(typ, discount_rate = self.discount_rate)
-        self.percapita_pv['pop'] = self.cohorts['pop']
-
-    def compute_ipl(self, typ):
+        if default:
+            self.aggregate_pv = self.cohorts.aggregate_generation_present_value(typ, discount_rate = self.discount_rate)
+            self.aggregate_pv.name = 'comptes_gen_agrégés'
+            self.aggregate_pv['pop'] = self.cohorts['pop']
+            
+            self.percapita_pv = self.cohorts.per_capita_generation_present_value(typ, discount_rate = self.discount_rate)
+            self.percapita_pv.name = 'comptes_gen_indiv'
+            self.percapita_pv['pop'] = self.cohorts['pop']
+            
+        else:
+            self.aggregate_pv_alt = self.cohorts_alt.aggregate_generation_present_value(typ, discount_rate = self.discount_rate_alt)
+            self.aggregate_pv_alt.name = 'comptes_agrégés_alternatifs'
+            self.aggregate_pv_alt['pop'] = self.cohorts['pop']
+            
+            self.percapita_pv_alt = self.cohorts_alt.per_capita_generation_present_value(typ, discount_rate = self.discount_rate_alt)
+            self.percapita_pv_alt.name = 'comptes_indiv_alternatifs'
+            self.percapita_pv_alt['pop'] = self.cohorts['pop']
+            
+    def compute_ipl(self, typ, default=True):
         """
-        Returns the IPL generated by the simulation
+        Returns the Intertemporal Public Liability generated by the simulation
         """
-        IPL = self.aggregate_pv.compute_ipl(typ, net_gov_wealth = self.net_gov_wealth, net_gov_spendings = self.net_gov_spendings)
+        if default:
+            IPL = self.aggregate_pv.compute_ipl(typ, net_gov_wealth = self.net_gov_wealth, net_gov_spendings = self.net_gov_spendings)
+        else:
+            IPL = self.aggregate_pv_alt.compute_ipl(typ, net_gov_wealth = self.net_gov_wealth_alt, net_gov_spendings = self.net_gov_spendings_alt)
         return IPL
     
-    def create_age_class(self, typ, step = 1):
+    def create_age_class(self, typ, step = 1, default = True):
         """
         Returns a dataframe containing the average net transfer present values for each age class.
         """
-        age_class = self.aggregate_pv.create_age_class(step, typ)
+        if default:
+            age_class = self.aggregate_pv.create_age_class(step, typ)
+        else:
+            age_class = self.aggregate_pv_alt.create_age_class(step, typ)
         return age_class
         
     def compute_gen_imbalance(self, typ):
@@ -272,7 +394,7 @@ class Simulation(object):
         Parameters
         ----------
         typ : Str
-        the name of the column containing the data from wich the imbalance will be calculated.
+        the name of the column containing the net_transfers from wich the imbalance will be calculated.
          
         Returns
         -------
@@ -323,8 +445,39 @@ class Simulation(object):
         imbalance_ratio = n_1/n_0
         coefficients = [n_1, imbalance, imbalance_ratio]
         return coefficients
-
- 
+    
+    def saving_simulation(self, file_path=None):
+        
+        if file_path is None:
+            raise Exception('A complete path to the file should be provided. DO not hesitate to use os.path.join')
+        
+        writer = ExcelFile(file_path)
+        print writer
+        cohorts_list_base =  [self.cohorts, self.cohorts_alt, self.percapita_pv, self.percapita_pv_alt, 
+                          self.aggregate_pv, self.aggregate_pv_alt]
+        cohorts_list = []
+        
+        for df in cohorts_list_base:
+            try:
+                name = df.name
+                cohorts_list.append(df)
+                print 'good to go'
+            except:
+                print 'no such cohort in this simulation'
+        
+        print len(cohorts_list)
+        df_dict = dict( (dataframe.name , dataframe) for dataframe in cohorts_list)
+        print df_dict
+        
+        for name, attribute in df_dict.iteritems():
+            print 'new dataframe'
+            #try:
+            attribute.to_excel(writer, sheet_name=name)
+            #except:
+            #    print 'BUG ENCOUNTERED'
+        writer.save()
+                
+        
 
 if __name__ == '__main__':
     pass

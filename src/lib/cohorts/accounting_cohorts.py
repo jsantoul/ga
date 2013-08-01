@@ -177,11 +177,14 @@ class AccountingCohorts(Cohorts):
         past_gen_dataframe = self.xs(year_min, level = 'year')
         past_gen_dataframe = past_gen_dataframe.cumsum()
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
+#         print '    past_gen_transfer = ', past_gen_transfer
  
          
         future_gen_dataframe = self.xs(0, level = 'age')
         future_gen_dataframe = future_gen_dataframe.cumsum()
         future_gen_transfer = future_gen_dataframe.get_value((1, year_max), typ)
+#         print '    future_gen_transfer =', future_gen_transfer
+        
         #Note : do not forget to eliminate values counted twice
         ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
         return ipl

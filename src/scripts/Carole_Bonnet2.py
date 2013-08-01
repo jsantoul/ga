@@ -2,7 +2,7 @@
 # Created on 6 mai 2013
 # This file is part of OpenFisca.
 # OpenFisca is a socio-fiscal microsimulation software
-# Copyright © #2013 Clément Schaff, Mahdi Ben Jelloul
+# Copyright © #2013 Clément Schaff, Mahdi Ben Jelloul, Jérôme SANTOUL
 # Licensed under the terms of the GVPLv3 or later license
 # (see openfisca/__init__.py for details)
 
@@ -11,7 +11,7 @@ import os
 from src.lib.simulation import Simulation
 from src.lib.cohorts.accounting_cohorts import AccountingCohorts
 from pandas import read_csv, HDFStore, concat, ExcelFile, DataFrame
-from numpy import array, hstack
+from numpy import array, hstack, arange
 import matplotlib.pyplot as plt
 from src import SRC_PATH
 
@@ -111,15 +111,15 @@ def fill_pop_data():
                                            'Carole_Bonnet', 'pop_1996_2006.h5'))
     store_pop['population'] = corrected_pop
     
+    
 def test():
     print 'Entering the simulation of C. Bonnet'
 
     simulation = Simulation()
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
-    
     simulation.load_population(population_filename, population_scenario)
     
-    # On rajoutes les années manquantes entre 1996 et 2007 :
+    # Adding missing population data between 1996 and 2007 :
     store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
                                            'Carole_Bonnet', 'pop_1996_2006.h5'))
     corrected_pop = store_pop['population']
@@ -129,39 +129,34 @@ def test():
     print 'prévisions insee', len(simulation.population), 'population corrigée', len(corrected_pop)
      
     simulation.population = concat([corrected_pop, simulation.population])
-    
     print '    longueur après combinaison',len(simulation.population)
 
+    #Loading profiles :
     simulation.load_profiles(profiles_filename)
-    
     xls = ExcelFile(CBonnet_results)
+    
     """
     Hypothesis set #1 : 
     actualization rate r = 3%
     growth rate g = 1%
-    net_gov_wealth = -3217.7e+09 (unit : Franc Français (FF) of 1996)
-    
+    net_gov_wealth = -3217.7e+09 (unit : Franc Français (FRF) of 1996)
+    non ventilated government spendings in 1996 : 1094e+09 FRF
     """
 
-    
-    #Setting parameters
+    #Setting parameters :
     year_length = 250
+    simulation.year_length = year_length
     r = 0.03
     g = 0.01
     n = 0.00
     net_gov_wealth = -3217.7e+09
-    net_gov_spendings = 0
-    avg_gov_spendings = 0
-    
-    # List w/ the economic affairs
-    spending_list = [241861, 246856, 245483, 251110, 261752, 271019,    
-                     286330,    290499,    301556,    315994,    315979,    332317,
-                     343392,    352239,    356353,    356858]
+    year_gov_spending = (1094)*1e+09
 
-    # List w/out the agregate : economic affairs
-#     spending_list = [186828,    195792,    193901,    199560,    209140,    218745,    229063,
-#                      234213,    245363,    255066,    253848,    270603,    279832,    280337,
-#                      283067,    286963,]
+#     avg_gov_spendings = 0
+#     # List w/ the economic affairs
+#     spending_list = [241861, 246856, 245483, 251110, 261752, 271019,    
+#                      286330,    290499,    301556,    315994,    315979,    332317,
+#                      343392,    352239,    356353,    356858]
 #     count = 0
 #     for spent in spending_list:
 #         year_gov_spending = spent*1e+06*((1+g)/(1+r))**count*6.55957
@@ -172,13 +167,8 @@ def test():
 
 #     avg_gov_spendings /= (count)
 #     print 'avg_gov_spendings = ', avg_gov_spendings
-    
-    for t in range(1, 251):
-        year_gov_spending = (150861)*1e+06*((1+g)/(1+r))**t*6.55957
-#         year_gov_spending = (avg_gov_spendings)*((1+g)/(1+r))**t
-        net_gov_spendings += year_gov_spending
-        
-    print net_gov_spendings, '= net gov spendings'
+
+    # Loading simulation's parameters :
     simulation.set_population_projection(year_length=year_length, method="stable")
     simulation.set_tax_projection(method="per_capita", rate=g)
     simulation.set_growth_rate(g)
@@ -186,16 +176,13 @@ def test():
     simulation.set_population_growth_rate(n)
     simulation.create_cohorts()
     simulation.set_gov_wealth(net_gov_wealth)
-    simulation.set_gov_spendings(net_gov_spendings)
+    simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
 
-    #Calculating net transfers
+    #Calculating net transfers :
     #Net_transfers = tax paid to the state minus money recieved from the state
-
     taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
     payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
-    
     simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-    
     
     """
     Reproducing the table 2 : Comptes générationnels par âge et sexe (Compte central)
@@ -233,20 +220,22 @@ def test():
     print age_class_pv_ma.head()
     
     
-#     #Plotting
-#     age_class_pv = cohorts_age_class.xs(year, level = "year").unstack(level="sex")
-#     age_class_pv = age_class_pv['net_transfers']
-#     age_class_pv.columns = ['men' , 'women']
-# #     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
-# #     age_class_pv['total'] *= 1.0/2.0
-#     age_class_theory = xls.parse('Feuil1', index_col = 0)
-#        
-#     age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
-#     age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
-#     age_class_pv.plot(style = '--') ; plt.legend()
-#     plt.axhline(linewidth=2, color='black')
-#     plt.show()
+    #Plotting
+    age_class_pv = cohorts_age_class.xs(year, level = "year").unstack(level="sex")
+    age_class_pv = age_class_pv['net_transfers']
+    age_class_pv.columns = ['men' , 'women']
+#     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
+#     age_class_pv['total'] *= 1.0/2.0
+    age_class_theory = xls.parse('Feuil1', index_col = 0)
+        
+    age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
+    age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
+    age_class_pv.plot(style = '--') ; plt.legend()
+    plt.axhline(linewidth=2, color='black')
+    plt.show()
 
+    #Comparing with other hypothesis set:
+    
 def show_data():
     
     country = "france"    
@@ -264,11 +253,10 @@ def show_data():
     simulation.restricted_pop1 = simulation.population.iloc[:101,:]
     simulation.restricted_pop2 = simulation.population.iloc[5454:5555,:]
     
-    
     simulation.restricted_pop = concat([simulation.restricted_pop1, simulation.restricted_pop2])
     simulation.profiles.reset_index(inplace=True); simulation.restricted_pop.reset_index(inplace=True)
     simulation.restricted_pop['year'] = 1996
-    print simulation.restricted_pop.head()
+    print simulation.restricted_pop.to_string()
     print simulation.profiles.head()
     
     simulation.profiles['pop'] = simulation.restricted_pop['pop'] 
@@ -281,9 +269,10 @@ def show_data():
     agreg_irpp = simulation.profiles.cumsum().get_value((100,1,1996), 'tva')
     agreg_pop = simulation.profiles.cumsum().get_value((100,1,1996), 'pop')
     print agreg_irpp, agreg_pop
+
     
-     
 if __name__ == '__main__':
 #     fill_pop_data()
     test()
 #     show_data()
+
