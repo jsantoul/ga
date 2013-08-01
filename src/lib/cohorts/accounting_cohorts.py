@@ -187,7 +187,7 @@ class AccountingCohorts(Cohorts):
         
         #Note : do not forget to eliminate values counted twice
         ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
-        return ipl
+        return -ipl
 
 
     def accounting_plot(self, step=5, typ=None):

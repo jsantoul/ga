@@ -292,6 +292,7 @@ class DataCohorts(Cohorts):
         res = res.reset_index()
         res = res.set_index(['age', 'sex', 'year'])
         res.columns = [typ]
+        res = DataFrame(res)
         return AccountingCohorts(res)
 
 

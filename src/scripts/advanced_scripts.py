@@ -11,9 +11,11 @@ import os
 from src.lib.simulation import Simulation
 from src.lib.cohorts.accounting_cohorts import AccountingCohorts
 from pandas import read_csv, HDFStore, concat, ExcelFile, DataFrame, MultiIndex
-from numpy import array, hstack, arange
+from numpy import array, hstack, arange, NaN
 import matplotlib.pyplot as plt
 from src import SRC_PATH
+from src.lib.cohorts.accounting_cohorts import AccountingCohorts
+
 
 country = "france"    
 population_filename = os.path.join(SRC_PATH, 'countries', country, 'sources',
@@ -346,87 +348,114 @@ def test_saving():
     
     simulation.saving_simulation(file_path=xls)
 
+
+
+
 def transition():
     
-    
-    levels = ['haut', 'cent', 'bas']
+    levels = ['haut', 'bas']
     
     taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
     payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
     
-    arrays=array(['FEC-MIG_haut', 'FEC-MIG_cent', 'FEC-MIG_bas'])
-    year_length = 200
+    year_length = 250
     year_min = 1996
-    year_max = year_min+year_length+1
+    year_max = year_min+year_length-1
     
-    record = DataFrame(index=arrays, columns=['ESP_haut', 'ESP_cent', 'ESP_bas'])
+    arrays=arange(year_min, year_min+61)
+    record = DataFrame(index=arrays)
+    
     simulation = Simulation()
 
-    print record
     for param1 in levels:
         for param2 in levels:
-            population_scenario = "projpop0760_FEC"+param1+"ESP"+param2+"MIG"+param1
-
-            simulation.load_population(population_filename, population_scenario)
-    
-            # Adding missing population data between 1996 and 2007 :
-            store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
-                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
-            corrected_pop = store_pop['population']
-            simulation.population = concat([corrected_pop, simulation.population])
-            print '    longueur après combinaison',len(simulation.population)
-
-            simulation.load_profiles(profiles_filename)
-    
-            simulation.year_length = year_length
-            r = 0.03
-            g = 0.01
-            n = 0.00
-            net_gov_wealth = -3217.7e+09
-            year_gov_spending = (1094)*1e+09
-    
-            # Loading simulation's parameters :
-            simulation.set_population_projection(year_length=year_length, method="stable")
-            simulation.set_tax_projection(method="per_capita", rate=g)
-            simulation.set_growth_rate(g)
-            simulation.set_discount_rate(r) 
-            simulation.set_population_growth_rate(n)
-            simulation.create_cohorts()
-            simulation.set_gov_wealth(net_gov_wealth)
-            simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
-    
-            simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-    
-#             year_min = simulation.cohorts._year_min
-#             year_max = simulation.cohorts._year_min + year_length+1
             
-            transition = DataFrame(index=array(range(year_min, year_max)), columns=['debt'])
+                population_scenario = "projpop0760_FEC"+param1+"ESP"+param2+"MIG"+param1
+                simulation.load_population(population_filename, population_scenario)
     
-            for year in range(year_min, year_max):
-                actualize = True
+                # Adding missing population data between 1996 and 2007 :
+                store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
+                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
+                corrected_pop = store_pop['population']
+                simulation.population = concat([corrected_pop, simulation.population])
+
+                simulation.load_profiles(profiles_filename)
+    
+                simulation.year_length = year_length
+                r = 0.03
+                g = 0.01
+                n = 0.00
+                net_gov_wealth = -3217.7e+09
+                year_gov_spending = (1094)*1e+09
         
-                r = simulation.discount_rate
-                g = simulation.growth_rate
-                t = year-year_min
-        
-                df_year = simulation.cohorts.filter_value(year=[year], typ=['net_transfers', 'pop'])
-        
-                print year
-#                 print (t*actualize)
-        
-                df_year['agg_transfers'] = df_year['net_transfers']*df_year['pop']*((1+g)/(1+r))**(t*actualize)
-                df_year = df_year.cumsum()
-        
-                gov_spendings = simulation.net_gov_spendings*((1+g)/(1+r))**(t*actualize)
-                cum_net_transfers = df_year.get_value((100,1,year), 'agg_transfers')
-                debt = cum_net_transfers - gov_spendings
-        
-                transition.loc[year, 'debt'] = debt
-#                 print transition.head().to_string()
-        
-            xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/"+population_scenario+'.xlsx'
+                # Loading simulation's parameters :
+                simulation.set_population_projection(year_length=year_length, method="stable")
+                simulation.set_tax_projection(method="per_capita", rate=g)
+                simulation.set_growth_rate(g)
+                simulation.set_discount_rate(r) 
+                simulation.set_population_growth_rate(n)
+                simulation.set_gov_wealth(net_gov_wealth)
+                simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
+                
+                record[population_scenario] = NaN
+                col_name2 = population_scenario+'_precision'
+                record[col_name2] = NaN
+
+                simulation.create_cohorts()
+                simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
+                simulation.create_present_values(typ='net_transfers')
+
+                for year in range(year_min, year_min+60):
+                    
+                    #On tente de tronquer la df au fil du temps
+                    try:
+                        simulation.aggregate_pv = simulation.aggregate_pv.drop(labels=year-1, level='year')
+                    except:
+                        print 'except path'
+                        pass
+                    simulation.aggregate_pv = AccountingCohorts(simulation.aggregate_pv)
+
+#                     imbalance = simulation.compute_gen_imbalance(typ='net_transfers')
+                    ipl = simulation.compute_ipl(typ='net_transfers')
+                    
+                    # Calcul du résidut de l'IPL pour vérifier la convergence 
+                    #(on se place tard dans la projection)
+                    aggregate_val = simulation.aggregate_pv
+                    precision_df = aggregate_val.loc[aggregate_val.index.get_level_values(2)>=2220,:]
+                    
+                    year_min_ = array(list(precision_df.index.get_level_values(2))).min()
+                    year_max_ = array(list(precision_df.index.get_level_values(2))).max()
+            #         age_min = array(list(self.index.get_level_values(0))).min()
+                    age_max_ = array(list(precision_df.index.get_level_values(0))).max()
+                    print 'CALIBRATION CHECK : ', year_min_, year_max_
+                    
+                    past_gen_dataframe = precision_df.xs(year_min_, level = 'year')
+                    past_gen_dataframe = past_gen_dataframe.cumsum()
+                    past_gen_transfer = past_gen_dataframe.get_value((age_max_, 1), 'net_transfers')
+#                     print '    past_gen_transfer = ', past_gen_transfer
+             
+                    future_gen_dataframe = precision_df.xs(0, level = 'age')
+                    future_gen_dataframe = future_gen_dataframe.cumsum()
+                    future_gen_transfer = future_gen_dataframe.get_value((1, year_max_), 'net_transfers')
+#                     print '    future_gen_transfer =', future_gen_transfer
+                    
+                    restricted_gov_spendings = 0
+                    for i in range(year_min_, year_max_):
+                        part_gov_spendings = year_gov_spending*((1+g)/(1+r))**(i-year_min)
+                        restricted_gov_spendings += part_gov_spendings
+#                     print restricted_gov_spendings
+                    #Note : do not forget to eliminate values counted twice
+                    last_ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - restricted_gov_spendings - past_gen_dataframe.get_value((0, 0), 'net_transfers')
+                    
+                    precision = -last_ipl/ipl
+                    print 'precision = ', precision
+                    
+                    record.loc[year, population_scenario] = ipl
+                    record.loc[year, col_name2] = precision
+                print record
+    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/"+'ipl_evolution'+'.xlsx'
      
-            transition.to_excel(xls, 'ipl')
+    record.to_excel(xls, 'ipl')
     
     
 if __name__ == '__main__':

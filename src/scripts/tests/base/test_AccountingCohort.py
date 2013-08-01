@@ -21,7 +21,7 @@ def test_compute_ipl():
     cohort2 = create_neutral_profiles_cohort(population = size_generation)
     cohort3 = cohort2.aggregate_generation_present_value('tax')
     ipl = cohort3.compute_ipl(typ = 'tax', net_gov_wealth = 10)
-    assert ipl == 10.0
+    assert ipl == -10.0
     
 
 def test_generation_extraction():
