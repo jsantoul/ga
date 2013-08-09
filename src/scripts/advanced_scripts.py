@@ -33,7 +33,7 @@ def test_comparison():
     print 'Entering the comparison function'
     
     simulation = Simulation()
-    population_scenario_alt = "projpop0760_FECbasESPhautMIGbas"
+    population_scenario_alt = "projpop0760_FECbasESPbasMIGbas"
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
     simulation.load_population(population_filename, population_scenario)
     simulation.load_population(population_filename, population_scenario_alt, default=False)
@@ -43,8 +43,8 @@ def test_comparison():
                                            'Carole_Bonnet', 'pop_1996_2006.h5'))
     corrected_pop = store_pop['population']
     simulation.population = concat([corrected_pop, simulation.population])
-    simulation.population_alt = concat([corrected_pop, simulation.population_alt])
-
+    simulation.population_alt = concat([corrected_pop.iloc[0:101, :], corrected_pop.iloc[1111:1212,:]]) #concat([corrected_pop, simulation.population_alt])
+    
     #Loading profiles :
     simulation.load_profiles(profiles_filename)
     
@@ -83,7 +83,7 @@ def test_comparison():
     """
     Alternate Hypothesis set : 
     actualization rate r = 3%
-    growth rate g = 0.5%
+    growth rate g = 1%
     net_gov_wealth = -3217.7e+09 (unit : Franc Français (FRF) of 1996)
     non ventilated government spendings in 1996 : 1094e+09 FRF
     """
@@ -103,7 +103,7 @@ def test_comparison():
     simulation.set_gov_wealth(net_gov_wealth_alt, default=False)
     simulation.set_gov_spendings(year_gov_spending_alt, default=False, compute=True)
     
-
+    #simulation.cohorts_alt.loc[(0,0,2014):, 'cot'] *= (1+0.1)
     simulation.cohorts_alt.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
     simulation.create_present_values('net_transfers', default=False)
 
@@ -142,16 +142,41 @@ def test_comparison():
     age_class_pv = cohorts_age_class.xs(1996, level = "year").unstack(level="sex")
     age_class_pv = age_class_pv['net_transfers']
     age_class_pv.columns = ['men' , 'women']
-     
+        
     age_class_pv_alt = cohorts_age_class_alt.xs(1996, level = "year").unstack(level="sex")
     age_class_pv_alt = age_class_pv_alt['net_transfers']
     age_class_pv_alt.columns = ['men_alt' , 'women_alt']
- 
+    
     age_class_pv['men_alt'] = age_class_pv_alt['men_alt'] ; age_class_pv['women_alt'] = age_class_pv_alt['women_alt']
     age_class_pv.plot(style = '--') ; plt.legend()
 #     age_class_pv_alt.plot(style = '--') ; plt.legend()
     plt.axhline(linewidth=2, color='black')
     plt.show()
+
+#     #Plotting profiles :
+#     profiles_to_plot = simulation.cohorts.xs(90, level = "age").unstack(level="sex")
+#     profiles_to_plot = profiles_to_plot['net_transfers']
+#     profiles_to_plot.columns = ['men' , 'women']
+#       
+#     profiles_to_plot_alt = simulation.cohorts_alt.xs(90, level = "age").unstack(level="sex")
+#     profiles_to_plot_alt = profiles_to_plot_alt['net_transfers']
+#     profiles_to_plot_alt.columns = ['men_alt' , 'women_alt']
+#   
+#     profiles_to_plot['men_alt'] = profiles_to_plot_alt['men_alt'] ; profiles_to_plot['women_alt'] = profiles_to_plot_alt['women_alt']
+#     profiles_to_plot.plot(style = '--') ; plt.legend()
+# #     age_class_pv_alt.plot(style = '--') ; plt.legend()
+#     plt.axhline(linewidth=2, color='black')
+    
+#     cohorts_age_class.xs(2020, level = "year").unstack(level="sex").plot(subplots=True)
+#     plt.show()
+
+    #Saving the decomposed ipl:
+    to_save = simulation.break_down_ipl(typ='net_transfers', default=False, threshold=60)
+       
+#     to_save = age_class_pv
+    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/stationnaire_alt.xlsx"
+         
+    to_save.to_excel(xls, 'ipl')
 
 
 def compute_elasticities():
@@ -159,19 +184,7 @@ def compute_elasticities():
     print 'Entering the comparison function'
     
     simulation = Simulation()
-    population_scenario = "projpop0760_FECbasESPbasMIGbas"
-    simulation.load_population(population_filename, population_scenario)
-    
-    # Adding missing population data between 1996 and 2007 :
-    store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
-                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
-    corrected_pop = store_pop['population']
-    simulation.population = concat([corrected_pop, simulation.population])
-    print '    longueur après combinaison',len(simulation.population)
 
-    #Loading profiles :
-    simulation.load_profiles(profiles_filename)
-    
     year_length = 200
     simulation.set_year_length(nb_year=year_length)
     net_gov_wealth = -3217.7e+09
@@ -184,171 +197,179 @@ def compute_elasticities():
     
     simulation.set_population_projection(year_length=simulation.year_length, method="exp_growth")
 
-    elasticities_df = DataFrame(data=None, index=arange(0,4, 0.5), columns=arange(1, 4, 0.5), 
-                 dtype=None, copy=False)
-    epsilon = 1e-06
-    
-    for r_index in arange(1, 4, 0.5):
-        for g_index in arange(0, 4, 0.5):
-            r = r_index/100
-            g = g_index/100
-            n = 0.00
-            pi = g
-            
-            r_alt = r + epsilon
-            g_alt = g 
-            n_alt = 0.00
-            pi_alt = g_alt
-            
-            simulation.set_tax_projection(method="desynchronized", rate=g, inflation_rate=pi, typ=taxes_list, payments_list=payments_list)
-            simulation.set_growth_rate(g)
-            simulation.set_discount_rate(r) 
-            simulation.set_population_growth_rate(n)
-            simulation.create_cohorts()
-            simulation.set_gov_wealth(net_gov_wealth)
-            simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
-            simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-            simulation.create_present_values('net_transfers', default=True)
-            
-            
-            simulation.set_tax_projection(method="desynchronized", rate=g_alt, inflation_rate=pi_alt, typ=taxes_list, payments_list=payments_list)
-            simulation.set_growth_rate(g_alt, default=False)
-            simulation.set_discount_rate(r_alt, default=False) 
-            simulation.set_population_growth_rate(n_alt, default=False)
-            simulation.create_cohorts(default=False)
-            simulation.set_gov_wealth(net_gov_wealth_alt, default=False)
-            simulation.set_gov_spendings(year_gov_spending_alt, default=False, compute=True)
-            simulation.cohorts_alt.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-            simulation.create_present_values('net_transfers', default=False)
-            
-            
-            # Calculating the Intertemporal Public Liability
-            ipl = simulation.compute_ipl(typ = 'net_transfers')
-            ipl_alt = simulation.compute_ipl(typ = 'net_transfers', default = False)
-            
-            #Elasticities
-            print "COMPUTING ELASTICITIES"
-            print '------------------------'
-            ipl_derivative = (ipl_alt - ipl)/epsilon
-            print '    semi élasticité of IPL:', ipl_derivative/ipl
-            print 'Valeur de q :'
-            print (1+g)/(1+r)
-            
-            elasticities_df.loc[g_index, r_index] = ipl_derivative/ipl
-    
-    print elasticities_df.to_string()
-            
-    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/elasticities_r.xlsx"
-     
-    elasticities_df.to_excel(xls, 'cohorte')
-    
+    epsilon = 0.5
 
-def multiple_scenario():
-    
-    print 'starting recording of multiple scenario'
-    
-    simulation = Simulation()
     levels = ['haut', 'cent', 'bas']
-    
-    taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
-    payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
-    
-    arrays=[array(['FEC_haut', 'FEC_haut', 'FEC_haut','FEC_cent', 'FEC_cent', 'FEC_cent', 'FEC_bas', 'FEC_bas', 'FEC_bas']),
-            array(['MIG_haut', 'MIG_cent', 'MIG_bas','MIG_haut', 'MIG_cent', 'MIG_bas','MIG_haut', 'MIG_cent', 'MIG_bas'])]
-    
-    
-    record = DataFrame(index=arrays, columns=['ESP_haut', 'ESP_cent', 'ESP_bas'])
-    
+    record = DataFrame(index=levels)
     print record
     
-    for param1 in levels:
-        for param2 in levels:
-            for param3 in levels:
-                
-                scenario_name = "projpop0760_FEC"+param1+"ESP"+param2+"MIG"+param3
-                print scenario_name
-                
-                simulation.load_population(population_filename, scenario_name)
-
-                # Adding missing population data between 1996 and 2007 :
-                store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
-                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
-                corrected_pop = store_pop['population']
-                simulation.population = concat([corrected_pop, simulation.population])
-
-                #Loading profiles :
-                simulation.load_profiles(profiles_filename)
+    param1 = 'haut'
+    param2 = 'haut'
+    param3 = 'cent'
     
-                year_length = 250
-                r = 0.03
-                g = 0.01
-                n = 0.00
-                pi = 0.01
-                simulation.set_year_length(nb_year=year_length)
-                net_gov_wealth = -3217.7e+09
-                year_gov_spending = (1094)*1e+09
-                
-                simulation.set_population_projection(year_length=simulation.year_length, method="exp_growth")
-                simulation.set_tax_projection(method="desynchronized", rate=g, inflation_rate=pi, typ=taxes_list, payments_list=payments_list)
-                simulation.set_growth_rate(g)
-                simulation.set_discount_rate(r) 
-                simulation.set_population_growth_rate(n)
-                simulation.create_cohorts()
-                simulation.set_gov_wealth(net_gov_wealth)
-                simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
-                simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-                simulation.create_present_values('net_transfers', default=True)
-                
-                ipl = simulation.compute_ipl(typ = 'net_transfers')
-                
-#                 index_name = ('FEC_'+param1, 'MIG_'+param3)
-                column_name = 'ESP_'+param2
-                
-                print ipl
-                
-                record.loc[('FEC_'+param1, 'MIG_'+param3), column_name] = ipl
-                print record.to_string()
-    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/multiple_scenario.xlsx"
-     
-    record.to_excel(xls, 'ipl')
+    population_scenario = "projpop0760_FEC"+param2+"ESP"+param2+"MIG"+param2
+    population_scenario_alt = 'projpop0760_FEC'+param1+'ESP'+param2+'MIG'+param3
     
-    
-def test_saving():
-    simulation = Simulation()
-    
-    
-    population_scenario = "projpop0760_FECbasESPbasMIGbas"
     simulation.load_population(population_filename, population_scenario)
+    simulation.load_population(population_filename, population_scenario_alt, default=False)
+
+    # Adding missing population data between 1996 and 2007 :
+    store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
+                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
+    corrected_pop = store_pop['population']
+    simulation.population = concat([corrected_pop, simulation.population])
+    simulation.population_alt = concat([corrected_pop, simulation.population_alt])
+    print '    longueur après combinaison',len(simulation.population)
+
+    #Loading profiles :
     simulation.load_profiles(profiles_filename)
-    
-    year_length = 250
-    simulation.year_length = year_length
     r = 0.03
     g = 0.01
     n = 0.00
-    net_gov_wealth = -3217.7e+09
-    year_gov_spending = (1094)*1e+09
+    pi = g
     
-    # Loading simulation's parameters :
-    simulation.set_population_projection(year_length=year_length, method="stable")
-    simulation.set_tax_projection(method="per_capita", rate=g)
+    r_alt = r
+    g_alt = g 
+    n_alt = 0.00
+    pi_alt = g_alt
+    
+    simulation.set_tax_projection(method="desynchronized", rate=g, inflation_rate=pi, typ=taxes_list, payments_list=payments_list)
     simulation.set_growth_rate(g)
     simulation.set_discount_rate(r) 
     simulation.set_population_growth_rate(n)
     simulation.create_cohorts()
     simulation.set_gov_wealth(net_gov_wealth)
     simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
+    simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
+    simulation.create_present_values('net_transfers', default=True)
     
+    
+    simulation.set_tax_projection(method="desynchronized", rate=g_alt, inflation_rate=pi_alt, typ=taxes_list, payments_list=payments_list)
+    simulation.set_growth_rate(g_alt, default=False)
+    simulation.set_discount_rate(r_alt, default=False) 
+    simulation.set_population_growth_rate(n_alt, default=False)
+    simulation.create_cohorts(default=False)
+    simulation.set_gov_wealth(net_gov_wealth_alt, default=False)
+    simulation.set_gov_spendings(year_gov_spending_alt, default=False, compute=True)
+    simulation.cohorts_alt.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
+    simulation.create_present_values('net_transfers', default=False)
+    
+    
+    # Calculating the Intertemporal Public Liability
+    ipl = simulation.compute_ipl(typ = 'net_transfers')
+    ipl_alt = simulation.compute_ipl(typ = 'net_transfers', default = False)
+    print 'IPL = ', ipl
+    print 'IPL_alt=  ', ipl_alt
+    
+    #Elasticities
+    print "COMPUTING ELASTICITIES"
+    print '------------------------'
+    ipl_derivative = (ipl_alt - ipl)/epsilon
+    print '    semi élasticité of IPL:', ipl_derivative/ipl
+    print 'Valeur de q :'
+    print (1+g)/(1+r)
+    
+    col_name = 'MIG'+param3
+    record[col_name] = NaN
+    record.loc[param1, col_name] = ipl_derivative/ipl
+        
+    print record.to_string()
+            
+#     xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/elasticities_pop.xlsx"
+#      
+#     record.to_excel(xls, 'cohorte')
+    
+
+def simple_scenario():
+    
+    #Initialisation et entrée des paramètres de base :
+    simulation = Simulation()
+    year_length = 300
+    simulation.set_year_length(nb_year=year_length)
+    net_gov_wealth = -3217.7e+09
+    year_gov_spending = (1094)*1e+09
+    net_gov_wealth_alt = -3217.7e+09
+    year_gov_spending_alt = (1094)*1e+09
     taxes_list = ['tva', 'tipp', 'cot', 'irpp', 'impot', 'property']
     payments_list = ['chomage', 'retraite', 'revsoc', 'maladie', 'educ']
+    
+    simulation.set_population_projection(year_length=simulation.year_length, method="exp_growth")
+
+    #On charge la population:
+    population_scenario = "projpop0760_FECbasESPbasMIGbas"
+    store_pop = HDFStore(os.path.join(SRC_PATH, 'countries', country, 'sources',
+                                           'Carole_Bonnet', 'pop_1996_2006.h5'))
+    corrected_pop = store_pop['population']
+    simulation.population = concat([corrected_pop.iloc[0:101, :], corrected_pop.iloc[1111:1212,:]]) #<- la première année TODO: c'est moche
+    simulation.load_population(population_filename, population_scenario, default=False)
+
+    simulation.population_alt = concat([corrected_pop, simulation.population_alt])
+
+    simulation.load_profiles(profiles_filename)
+    r = 0.03
+    g = 0.01
+    n = 0.00
+    
+    r_alt = r
+    g_alt = g 
+    n_alt = 0.00
+
+    #On crée le témoin :
+    simulation.set_tax_projection(method="aggregate", rate=g)
+    simulation.set_growth_rate(g)
+    simulation.set_discount_rate(r) 
+    simulation.set_population_growth_rate(n)
+    
+    simulation.create_cohorts()
+    
+    simulation.set_gov_wealth(net_gov_wealth)
+    simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
     simulation.cohorts.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
-    simulation.create_present_values(typ = 'net_transfers')
+    simulation.create_present_values('net_transfers', default=True)
     
-    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/saved_cohorts.xlsx"
+    #On crée le groupe test :
+    simulation.set_growth_rate(g_alt, default=False)
+    simulation.set_discount_rate(r_alt, default=False) 
+    simulation.set_population_growth_rate(n_alt, default=False)
     
-    simulation.saving_simulation(file_path=xls)
+    simulation.create_cohorts(default=False)
+    simulation.cohorts_alt.loc[[x>=2015 for x in simulation.cohorts_alt.index.get_level_values(2)], 'retraite'] *= (1/2)
+
+    simulation.set_gov_wealth(net_gov_wealth_alt, default=False)
+    simulation.set_gov_spendings(year_gov_spending_alt, default=False, compute=True)
+    simulation.cohorts_alt.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
+    simulation.create_present_values('net_transfers', default=False)
+    
+    #Calcul de l'IPL et de sa décomposition
+    ipl_base = simulation.compute_ipl(typ='net_transfers')
+    ipl_alt = simulation.compute_ipl(typ='net_transfers', default=False, precision=False)
+    
+    tmp = simulation.cohorts.loc[:, ['net_transfers', 'pop', 'dsct']]
+    tmp['running_transfers'] = tmp['net_transfers']
+    tmp['net_transfers'] *= tmp['dsct']
+
+    tmp_2 = simulation.cohorts_alt.loc[:, ['net_transfers', 'pop', 'dsct']]
+    tmp_2['running_transfers'] = tmp_2['net_transfers']
+    tmp_2['net_transfers'] *= tmp_2['dsct']
+    
+    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Output_folder/"
+
+    for year in range(1996, 2007):
+        flux_df = AccountingCohorts(tmp).extract_generation(year=year, typ='net_transfers', age=0)
+        flux_df = flux_df.xs(0, level='sex')
+        print year
+
+        flux_df_alt = AccountingCohorts(tmp_2).extract_generation(year=year, typ='net_transfers', age=0)
+        flux_df_alt = flux_df_alt.xs(0, level='sex')
+        flux_df[year] = flux_df_alt['net_transfers']
+    
+        flux_df.to_excel(str(xls)+str(year)+'_.xlsx', 'flux')
 
 
+    print ipl_base, ipl_alt
+#     flux_df.to_excel(xls+'flux_temoin.xlsx', 'témoin')
+#     flux_df_alt.to_excel(xls+'flux_pop.xlsx', 'avec_pop')
+    
 
 
 def transition():
@@ -362,7 +383,7 @@ def transition():
     year_min = 1996
     year_max = year_min+year_length-1
     
-    arrays=arange(year_min, year_min+61)
+    arrays=arange(year_min, year_min+60)
     record = DataFrame(index=arrays)
     
     simulation = Simulation()
@@ -392,7 +413,7 @@ def transition():
                 simulation.set_population_projection(year_length=year_length, method="stable")
                 simulation.set_tax_projection(method="per_capita", rate=g)
                 simulation.set_growth_rate(g)
-                simulation.set_discount_rate(r) 
+                simulation.set_discount_rate(r)
                 simulation.set_population_growth_rate(n)
                 simulation.set_gov_wealth(net_gov_wealth)
                 simulation.set_gov_spendings(year_gov_spending, default=True, compute=True)
@@ -420,11 +441,11 @@ def transition():
                     
                     # Calcul du résidut de l'IPL pour vérifier la convergence 
                     #(on se place tard dans la projection)
-                    aggregate_val = simulation.aggregate_pv
-                    precision_df = aggregate_val.loc[aggregate_val.index.get_level_values(2)>=2220,:]
+                    precision_df = simulation.aggregate_pv
+                    print precision_df.head().to_string()
                     
                     year_min_ = array(list(precision_df.index.get_level_values(2))).min()
-                    year_max_ = array(list(precision_df.index.get_level_values(2))).max()
+                    year_max_ = array(list(precision_df.index.get_level_values(2))).max() - 1
             #         age_min = array(list(self.index.get_level_values(0))).min()
                     age_max_ = array(list(precision_df.index.get_level_values(0))).max()
                     print 'CALIBRATION CHECK : ', year_min_, year_max_
@@ -439,28 +460,26 @@ def transition():
                     future_gen_transfer = future_gen_dataframe.get_value((1, year_max_), 'net_transfers')
 #                     print '    future_gen_transfer =', future_gen_transfer
                     
-                    restricted_gov_spendings = 0
-                    for i in range(year_min_, year_max_):
-                        part_gov_spendings = year_gov_spending*((1+g)/(1+r))**(i-year_min)
-                        restricted_gov_spendings += part_gov_spendings
-#                     print restricted_gov_spendings
                     #Note : do not forget to eliminate values counted twice
-                    last_ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - restricted_gov_spendings - past_gen_dataframe.get_value((0, 0), 'net_transfers')
+                    last_ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - simulation.net_gov_spendings - past_gen_dataframe.get_value((0, 0), 'net_transfers')
+                    last_ipl = -last_ipl
                     
-                    precision = -last_ipl/ipl
+                    print last_ipl, ipl
+                    precision = (ipl - last_ipl)/ipl
                     print 'precision = ', precision
                     
                     record.loc[year, population_scenario] = ipl
                     record.loc[year, col_name2] = precision
-                print record
+                print record.head().to_string()
     xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/"+'ipl_evolution'+'.xlsx'
-     
+    print record.head(30).to_string()
     record.to_excel(xls, 'ipl')
     
     
 if __name__ == '__main__':
 #     test_comparison()
+    simple_scenario()
 #     test_saving()
 #     compute_elasticities()
 #     multiple_scenario()
-    transition()
+#     transition()

@@ -6,8 +6,8 @@ Created on 14 mai 2013
 @author: Jérôme SANTOUL
 '''
 from __future__ import division
-from pandas import concat
-from numpy import array
+from pandas import concat, DataFrame
+from numpy import array, arange, NaN
 from src.lib.cohorts.cohort import Cohorts
 import matplotlib.pyplot as plt
 
@@ -49,9 +49,9 @@ class AccountingCohorts(Cohorts):
             raise Exception('The given year is not valid')
         year_min = array(list(self.index_sets['year'])).min()
         year_max = array(list(self.index_sets['year'])).max()
-        if typ not in self._types:
+        if typ not in self.columns:
             raise Exception('the given column is not in the cohort')
-         
+
         #Normalizing the age if not given
         if age is None:
             age = 0
@@ -130,12 +130,14 @@ class AccountingCohorts(Cohorts):
 #         age_class_pvf = pvf.groupby(['age', 'year']).mean() 
 
        
-        #New version which takes in account the change of population over the years        
+        #New version which takes in account the change of population over the years
+        print pvm        
         age_class_pvm = pvm.groupby(['age', 'year']).sum()
         age_class_pvf = pvf.groupby(['age', 'year']).sum()
+        print age_class_pvm
         
-        age_class_pvm[typ] *= 1/age_class_pvm['pop']
-        age_class_pvf[typ] *= 1/age_class_pvf['pop']
+        age_class_pvm[typ] *= 1.0/age_class_pvm['pop']
+        age_class_pvf[typ] *= 1.0/age_class_pvf['pop']
          
         #Put back the dataframes together
         pieces = [age_class_pvm, age_class_pvf]
@@ -144,7 +146,7 @@ class AccountingCohorts(Cohorts):
         res = res.set_index(['age', 'sex', 'year'])
         return AccountingCohorts(res)            
  
-    def compute_ipl(self, typ, net_gov_wealth = None, net_gov_spendings = None):
+    def compute_ipl(self, typ, net_gov_wealth = None, net_gov_spendings = None, precision=False):
         """
         Return a value of the intertemporal public liability. 
         The dataframe has to contain the aggregated present values of transfer in order 
@@ -171,7 +173,8 @@ class AccountingCohorts(Cohorts):
          
         year_min = array(list(self.index_sets['year'])).min()
         year_max = array(list(self.index_sets['year'])).max()
-#         age_min = array(list(self.index_sets['age'])).min()
+        before_year_max = array(list(self.index_sets['year'])).max() - 1
+        
         age_max = array(list(self.index_sets['age'])).max()
          
         past_gen_dataframe = self.xs(year_min, level = 'year')
@@ -186,8 +189,73 @@ class AccountingCohorts(Cohorts):
 #         print '    future_gen_transfer =', future_gen_transfer
         
         #Note : do not forget to eliminate values counted twice
-        ipl = past_gen_transfer + future_gen_transfer + net_gov_wealth - net_gov_spendings - past_gen_dataframe.get_value((0, 0), typ)
-        return -ipl
+        ipl = net_gov_spendings - net_gov_wealth - future_gen_transfer - past_gen_transfer + past_gen_dataframe.get_value((0, 0), typ)
+        
+        if precision:
+            future_gen_transfer_last = future_gen_dataframe.get_value((1, before_year_max), typ)
+            last_ipl = net_gov_spendings - net_gov_wealth - past_gen_transfer - future_gen_transfer_last + past_gen_dataframe.get_value((0, 0), typ)
+            
+            to_return = (ipl - last_ipl)/ipl
+        else:
+            to_return = ipl
+        
+        return to_return
+    
+    def break_down_ipl(self, typ, net_gov_wealth = None, net_gov_spendings = None, threshold = 60):
+        """
+        This special method allows to examinate the series component of the ipl.
+        
+        Parameters
+        ----------
+        typ : the column containing the data used in the calculation
+         
+        net_gov_wealth : the present value of the wealth of the government
+         
+        net_gov_spendings : the present value of unventilated gov spendings
+         
+        Returns
+        -------
+         
+        break_down_df : DataFrame
+            a dataframe containing the terms of the series within the ipl. One line stores the constants.
+        """
+        if net_gov_wealth is None:
+            net_gov_wealth = 0
+        if net_gov_spendings is None:
+            net_gov_spendings = 0
+         
+        year_min = array(list(self.index_sets['year'])).min()
+        year_max = array(list(self.index_sets['year'])).max()
+        before_year_max = array(list(self.index_sets['year'])).max() - 1
+        
+        age_max = array(list(self.index_sets['age'])).max()
+         
+        past_gen_dataframe = self.xs(year_min, level = 'year')
+        past_gen_dataframe = past_gen_dataframe.cumsum()
+        past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
+#         print '    past_gen_transfer = ', past_gen_transfer
+ 
+        #On crée nos deux dataframe de travail : 
+        future_gen_dataframe = self.xs(0, level = 'age')
+        age_gen_df = self.xs(threshold, level = 'age')
+        
+        # On manipule les générations non-nées
+        future_gen_dataframe = future_gen_dataframe.unstack(level='sex')
+        future_gen_dataframe['age'] = 0
+        future_gen_dataframe.reset_index(inplace=True)
+        future_gen_dataframe.set_index(keys=['age', 'year'], inplace=True)
+        
+        # On manipule des généartions seuil
+        age_gen_df = age_gen_df.unstack(level='sex')
+        age_gen_df['age'] = threshold
+        age_gen_df.reset_index(inplace=True)
+        age_gen_df.set_index(keys=['age', 'year'], inplace=True)
+
+        broken_down = concat([future_gen_dataframe, age_gen_df])
+        broken_down = broken_down.unstack(level='age')
+        print broken_down.head().to_string()
+        
+        return broken_down
 
 
     def accounting_plot(self, step=5, typ=None):

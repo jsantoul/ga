@@ -21,6 +21,9 @@ def test_compute_ipl():
     cohort2 = create_neutral_profiles_cohort(population = size_generation)
     cohort3 = cohort2.aggregate_generation_present_value('tax')
     ipl = cohort3.compute_ipl(typ = 'tax', net_gov_wealth = 10)
+    precision = cohort3.compute_ipl(typ = 'tax', net_gov_wealth = 10, precision=True)
+    
+    assert precision == size_generation/ipl
     assert ipl == -10.0
     
 
@@ -65,11 +68,11 @@ def test_create_age_class():
     print cohort2.head()
     print cohort2.tail()
     step = 5.0
-    age_class = cohort2.create_age_class(step = step)
+    age_class = cohort2.create_age_class(step = step, typ='tax')
     print age_class.tail(10)
     count = 0
     while count < 100:
-        assert age_class.get_value((count, 1, 2001), 'tax') == 2
+        assert age_class.get_value((count, 1, 2001), 'tax') == 2, 'valeur obtenue %f' %(age_class.get_value((count, 1, 2001), 'tax'))
         count += step
 
 

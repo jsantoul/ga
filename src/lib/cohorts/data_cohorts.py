@@ -317,8 +317,53 @@ class DataCohorts(Cohorts):
         pv_gen = self.aggregate_generation_present_value(typ, discount_rate)
         pop = DataFrame({'pop' : self['pop']})
         pv_percapita = DataFrame(pv_gen[typ]/pop['pop'])
-        pv_percapita.columns = [typ]
+        pv_percapita['pop'] = pop['pop']
+        pv_percapita.columns = [typ, 'pop']
         return AccountingCohorts(pv_percapita)
+    
+    def new_per_capita_generation_present_value(self, typ, discount_rate = None):
+        """
+        Returns present net value per capita of the data typ 
+        
+        Parameters
+        ----------
+        typ : str
+              Column name
+        discount_rate : float
+        
+        Returns
+        -------
+        pv_percapita : an AccountingCohorts with column 'typ' containing the per capita present value of typ 
+        
+        """
+        if typ not in self._types:
+            raise Exception('cohort: variable %s is not in self._types' %typ)
+            return
+        if discount_rate is None:
+            discount_rate = 0.0
+        if 'dsct' not in self._types:
+            self.gen_dsct(discount_rate)
+        tmp = self['dsct']*self[typ]
+        tmp = tmp.unstack(level = 'year')  # untack year indices to columns
+        
+        pvm = tmp.xs(0, level='sex')
+        pvf = tmp.xs(1, level='sex') #Assuming 1 is the index for females resp. 0 is male.
+        
+        yr_min = array(list(self.index_sets['year'])).min()
+        yr_max = array(list(self.index_sets['year'])).max()
+        
+        for yr in arange(yr_min, yr_max)[::-1]:
+            pvm[yr] += hstack( [ pvm[yr+1].values[1:], 0]  )
+            pvf[yr] += hstack( [ pvf[yr+1].values[1:], 0]  )
+            
+        pieces = [pvm, pvf]
+        res =  concat(pieces, keys = [0,1], names = ["sex"] )
+        res = res.stack()
+        res = res.reset_index()
+        res = res.set_index(['age', 'sex', 'year'])
+        res.columns = [typ]
+        res = DataFrame(res)
+        return AccountingCohorts(res)
     
     def get_average_difference(self, consumption=[], income=[], year=None):
         """
