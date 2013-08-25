@@ -106,7 +106,7 @@ def test_comparison():
        
 #     to_save = age_class_pv
     xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/choc_test_alt.xlsx"
-         
+
     to_save.to_excel(xls, 'ipl')
     print ipl_base
     print ipl_alt
@@ -115,14 +115,19 @@ def test_comparison():
 def test_save_simulation():
     size_generation = 1
     cohort = create_neutral_profiles_cohort(population = size_generation)
-    simulation = Simulation()    
+    simulation = Simulation()
+    simulation.country = 'france'
     simulation.discount_rate = 0
     simulation.growth_rate = 0
     simulation.cohorts = cohort
     simulation.create_present_values('tax')
-
+    simulation.save_simulation(filename='test_save')
+    
+    store = HDFStore(os.path.join(SRC_PATH,'countries','france','sources', 'Output_folder','test_save.h5'))
+    assert store['aggregate_pv'] is not None
 
 if __name__ == '__main__':
 #     test_compute_gen_imbalance()
-    test_comparison()
+#     test_comparison()
+    test_save_simulation()
 #     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])    

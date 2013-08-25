@@ -521,25 +521,39 @@ class Simulation(object):
             break_down = self.aggregate_pv_alt.break_down_ipl(typ, net_gov_wealth = self.net_gov_wealth_alt, net_gov_spendings=self.net_gov_spendings_alt, threshold = threshold)
         return break_down
 
-    def save_simulation(self, attribute_list = ['cohorts', 'aggregate-pv', 'percapita_pv'], filename, has_alt = False):
+
+    def save_simulation(self, filename, attribute_list = ['cohorts', 'aggregate_pv', 'percapita_pv', 
+                        'cohorts_alt', 'aggregate_pv_alt', 'percapita_pv_alt'], has_alt = False):
         """
         Saves the output dataframe under default directory in an HDF store.
         Warning : will override .h5 file if already existant !
+        Warning : the data is saved as a dataframe, one has to recreate the Cohort when reading.
 
         Parameters
         ----------
         name : the name of the table inside the store
         filename : the name of the .h5 file where the table is stored. Created if not existant. 
         """
-        ERF_HDF5_DATA_DIR = os.path.join(SRC_PATH,'countries',self.country,'sources','Output_folder')
+        # Creating the filepath :
+        ERF_HDF5_DATA_DIR = os.path.join(SRC_PATH,'countries',self.country,'sources','Output_folder/')
         store = HDFStore(os.path.join(os.path.dirname(ERF_HDF5_DATA_DIR),filename+'.h5'))
         
-        for name in attribute_list:
-            if self.name is not None:
-                store.put(name, self.name)
-                if has_alt:
-                    name_alt = name + '_alt'
-                    store.put(name_alt, self.name_alt)
+        #Looping over simulation's attributes, saving only the one who are matching the list 
+        # AND aren't empty
+        from pandas import DataFrame
+
+        for attrib, value in self.__dict__.iteritems():
+            if attrib in attribute_list and value is not None:
+                
+                #Transforming the data within a cohort in a dataframe so HDFStore can handle it :
+                record = DataFrame(index=value.index)
+                for col in value.columns:
+                    record[col] = value[col]
+                print 'saving'
+                store[attrib] = record
+            else:
+                print 'ignored'
+        print store
         store.close()
 if __name__ == '__main__':
     pass
