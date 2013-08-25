@@ -399,7 +399,7 @@ class Simulation(object):
             age_class = self.aggregate_pv_alt.create_age_class(step, typ)
         return age_class
         
-    def compute_gen_imbalance(self, typ, default=True):
+    def compute_gen_imbalance(self, typ, default=True, to_return='ratio'):
         """
         Returns a list of indexes of the generationnal imbalance between the newborn of the reference year 
         and the unborn of the next year.
@@ -408,16 +408,24 @@ class Simulation(object):
         ----------
         typ : Str
         the name of the column containing the net_transfers from wich the imbalance will be calculated.
+        default : True or False
+        indicates if the computation should be performed on the default scenario or on the alternative scenario
+        to_return : 'ratio', 'difference', 'n_1' or 'all'
+        indicates the value one wants to compute (more on these below). If all is chosen, a tuple will be returned
          
         Returns
         -------
         coefficients : List
         A list of three numbers ordered as follow 
         - n_1 is the predicted per_capita net transfer for the unborn generation which satisfies the Government Budget Constraint.
-        - n_1 - n_0 is the difference of net payments between the newborn and the unborn
-        - n_1/n_0 is the ratio of the payments.
+        - n_1 - n_0 is the 'difference' of net payments between the newborn and the unborn
+        - n_1/n_0 is the 'ratio' of the payments.
          
         """   
+        #Gestio des exception de l'argument to_return:
+        if to_return not in ['difference', 'ratio', 'n_1', 'all']:
+            to_return = 'ratio'
+            print "Warning : argument to_return not recognized, function will return the default value "
         # On définit les dataframes sur avec les quelles on veut travailler :     
         if default:
             aggregate_pv = self.aggregate_pv
@@ -439,7 +447,7 @@ class Simulation(object):
         past_gen_transfer = past_gen_dataframe.get_value((age_max, 1), typ)
          
         future_gen_transfer = self.net_gov_spendings - self.net_gov_wealth - past_gen_transfer
-          
+        
         #Computing the number of people of the unborn generation
         population_unborn_ma = cohorts.get_value((0,0, year_min+1), 'pop')
         population_unborn_fe = cohorts.get_value((0,1,year_min+1), 'pop')
@@ -464,44 +472,20 @@ class Simulation(object):
         n_1 = future_gen_transfer/(mu_1*population_unborn) # = percapita_future_gen_transfer
         n_0 = (percapita_pv.get_value((0, 0, year_min), typ)/2 + 
                                percapita_pv.get_value((0, 1, year_min), typ)/2) # = actual_gen_transfer
-        imbalance = n_1 - n_0
-        imbalance_ratio = n_1/n_0
-        coefficients = [n_1, imbalance, imbalance_ratio]
-        return imbalance_ratio
+        
+        difference = n_1 - n_0
+        ratio = n_1/n_0
+        coefficients = [n_1, difference, ratio]
+        
+        if to_return == 'difference':
+            return difference
+        if to_return == 'ratio':
+            return ratio
+        if to_return == 'n_1':
+            return n_1
+        if to_return == 'all':
+            return coefficients
     
-    def saving_simulation(self, file_path=None):
-        """
-        CANNOT BE COMPLETED FOR NOW BECAUSE OF A BUG OF PANDAS
-        """
-        
-        if file_path is None:
-            raise Exception('A complete path to the file should be provided. DO not hesitate to use os.path.join')
-        
-        writer = ExcelFile(file_path)
-        print writer
-        cohorts_list_base =  [self.cohorts, self.cohorts_alt, self.percapita_pv, self.percapita_pv_alt, 
-                          self.aggregate_pv, self.aggregate_pv_alt]
-        cohorts_list = []
-        
-        for df in cohorts_list_base:
-            try:
-                name = df.name
-                cohorts_list.append(df)
-                print 'good to go'
-            except:
-                print 'no such cohort in this simulation'
-        
-        print len(cohorts_list)
-        df_dict = dict( (dataframe.name , dataframe) for dataframe in cohorts_list)
-        print df_dict
-        
-        for name, attribute in df_dict.iteritems():
-            print 'new dataframe'
-            #try:
-            attribute.to_excel(writer, sheet_name=name)
-            #except:
-            #    print 'BUG ENCOUNTERED'
-        writer.save()
     
     def break_down_ipl(self, typ, default=True, threshold = 60):
         """

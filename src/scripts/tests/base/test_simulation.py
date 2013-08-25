@@ -59,8 +59,10 @@ def test_compute_gen_imbalance():
     simulation.growth_rate = 0
     simulation.cohorts = cohort
     simulation.create_present_values('tax')
-    gen_imbalance = simulation.compute_gen_imbalance(typ = 'tax')
-#     print gen_imbalance
+    print simulation.aggregate_pv.tail(20).to_string()
+    print simulation.cohorts.head(20).to_string()
+    gen_imbalance = simulation.compute_gen_imbalance(typ = 'tax', to_return='difference')
+#     print gen_imbalance, -5000.0/(2*199.0)
     assert gen_imbalance == -5000.0/(2*199.0)
 
 def test_comparison():
@@ -105,7 +107,7 @@ def test_comparison():
     to_save = simulation.break_down_ipl(typ='tax', default=False, threshold=60)
        
 #     to_save = age_class_pv
-    xls = "C:/Users/Utilisateur/Documents/GitHub/ga/src/countries/france/sources/Carole_Bonnet/choc_test_alt.xlsx"
+    xls = os.path.join(SRC_PATH, 'test_comparison.xlsx')
 
     to_save.to_excel(xls, 'ipl')
     print ipl_base
@@ -129,5 +131,5 @@ def test_save_simulation():
 if __name__ == '__main__':
 #     test_compute_gen_imbalance()
 #     test_comparison()
-    test_save_simulation()
-#     nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])    
+#     test_save_simulation()
+    nose.core.runmodule(argv=[__file__, '-v', '-i test_*.py'])    
