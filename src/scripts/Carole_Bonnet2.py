@@ -24,6 +24,8 @@ CBonnet_results = os.path.join(SRC_PATH, 'countries', country, 'sources',
                                            'Carole_Bonnet', 'theoretical_results.xls')
 pop_insee = os.path.join(SRC_PATH, 'countries', country, 'sources',
                                            'Carole_Bonnet', 'pop_1996_2006.xls')
+xls_adress = "C:/Users/Public/Documents/Aptana Studio 3 Workspace/ga/src/countries/france/sources/Output_folder"
+
     
 def fill_pop_data():
     
@@ -116,7 +118,7 @@ def test():
     print 'Entering the simulation of C. Bonnet'
 
     simulation = Simulation()
-    population_scenario = "projpop0760_FECbasESPhautMIGbas"
+    population_scenario = "projpop0760_FECbasESPbasMIGbas"
     simulation.load_population(population_filename, population_scenario)
     
     # Adding missing population data between 1996 and 2007 :
@@ -219,20 +221,23 @@ def test():
     print age_class_pv_fe.head()
     print age_class_pv_ma.head()
     
+    age_class_pv = concat([age_class_pv_fe, age_class_pv_ma], axis=1)
+    print age_class_pv
+    age_class_pv.to_excel(str(xls_adress)+'\calibration.xlsx', 'compte_generation')
     
-#     #Plotting
-#     age_class_pv = cohorts_age_class.xs(year, level = "year").unstack(level="sex")
-#     age_class_pv = age_class_pv['net_transfers']
-#     age_class_pv.columns = ['men' , 'women']
-# #     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
-# #     age_class_pv['total'] *= 1.0/2.0
-#     age_class_theory = xls.parse('Feuil1', index_col = 0)
-#         
-#     age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
-#     age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
-#     age_class_pv.plot(style = '--') ; plt.legend()
-#     plt.axhline(linewidth=2, color='black')
-#     plt.show()
+    #Plotting
+    age_class_pv = cohorts_age_class.xs(year, level = "year").unstack(level="sex")
+    age_class_pv = age_class_pv['net_transfers']
+    age_class_pv.columns = ['men' , 'women']
+#     age_class_pv['total'] = age_class_pv_ma['net_transfers'] + age_class_pv_fe['net_transfers']
+#     age_class_pv['total'] *= 1.0/2.0
+    age_class_theory = xls.parse('Feuil1', index_col = 0)
+         
+    age_class_pv['men_CBonnet'] = age_class_theory['men_Cbonnet']
+    age_class_pv['women_CBonnet'] = age_class_theory['women_Cbonnet']
+    age_class_pv.plot(style = '--') ; plt.legend()
+    plt.axhline(linewidth=2, color='black')
+    plt.show()
 
     #Saving the decomposed ipl:
 #     breaked_down = simulation.break_down_ipl(typ='net_transfers')

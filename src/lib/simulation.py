@@ -10,7 +10,9 @@ from pandas import HDFStore
 from pandas.io.parsers import ExcelFile
 
 from cohorts.data_cohorts import DataCohorts
+from src import SRC_PATH
 
+import os
 
 class Simulation(object):
     """
@@ -504,7 +506,7 @@ class Simulation(object):
     def break_down_ipl(self, typ, default=True, threshold = 60):
         """
         Returns the Intertemporal Public Liability series component in a dataframe
-        
+        WARNING : STILL NOT COMPLETE.
         Parameters
         ----------
         
@@ -519,6 +521,25 @@ class Simulation(object):
             break_down = self.aggregate_pv_alt.break_down_ipl(typ, net_gov_wealth = self.net_gov_wealth_alt, net_gov_spendings=self.net_gov_spendings_alt, threshold = threshold)
         return break_down
 
+    def save_simulation(self, attribute_list = ['cohorts', 'aggregate-pv', 'percapita_pv'], filename, has_alt = False):
+        """
+        Saves the output dataframe under default directory in an HDF store.
+        Warning : will override .h5 file if already existant !
 
+        Parameters
+        ----------
+        name : the name of the table inside the store
+        filename : the name of the .h5 file where the table is stored. Created if not existant. 
+        """
+        ERF_HDF5_DATA_DIR = os.path.join(SRC_PATH,'countries',self.country,'sources','Output_folder')
+        store = HDFStore(os.path.join(os.path.dirname(ERF_HDF5_DATA_DIR),filename+'.h5'))
+        
+        for name in attribute_list:
+            if self.name is not None:
+                store.put(name, self.name)
+                if has_alt:
+                    name_alt = name + '_alt'
+                    store.put(name_alt, self.name_alt)
+        store.close()
 if __name__ == '__main__':
     pass

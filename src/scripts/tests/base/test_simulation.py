@@ -51,7 +51,6 @@ def test_simulation_creation():
 
 
 
-# TODO: create the test    
 def test_compute_gen_imbalance():
     size_generation = 1
     cohort = create_neutral_profiles_cohort(population = size_generation)
@@ -113,6 +112,14 @@ def test_comparison():
     print ipl_alt
     assert ipl_base == -105232
 
+def test_save_simulation():
+    size_generation = 1
+    cohort = create_neutral_profiles_cohort(population = size_generation)
+    simulation = Simulation()    
+    simulation.discount_rate = 0
+    simulation.growth_rate = 0
+    simulation.cohorts = cohort
+    simulation.create_present_values('tax')
 
 
 if __name__ == '__main__':
