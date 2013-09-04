@@ -49,7 +49,7 @@ def generate_simulation():
     
     simulation = Simulation()
     population_scenario = "projpop0760_FECbasESPbasMIGbas"
-    population_scenario_alt = "projpop0760_FECbasESPhautMIGbas"
+    population_scenario_alt = "projpop0760_FECbasESPbasMIGbas"
     simulation.load_population(population_filename, population_scenario)
     simulation.load_population(population_filename, population_scenario_alt, default=False)
     
@@ -111,7 +111,7 @@ def generate_simulation():
     net_gov_wealth_alt = -3217.7e+09
     year_gov_spending_alt = (1094)*1e+09
 
-    simulation.set_tax_projection(method="desynchronized", rate=g_alt, inflation_rate=pi_alt, typ=taxes_list, payments_list=payments_list)
+    simulation.set_tax_projection(method="aggregate", rate=g_alt, inflation_rate=pi_alt, typ=taxes_list, payments_list=payments_list)
     simulation.set_growth_rate(g_alt, default=False)
     simulation.set_discount_rate(r_alt, default=False) 
     simulation.set_population_growth_rate(n_alt, default=False)
@@ -119,8 +119,8 @@ def generate_simulation():
     simulation.set_gov_wealth(net_gov_wealth_alt, default=False)
     simulation.set_gov_spendings(year_gov_spending_alt, default=False, compute=True)
 
-    simulation.cohorts_alt.loc[[x>=2027 for x in simulation.cohorts_alt.index.get_level_values(2)], 'cot'] *= (1+0.1)
-    simulation.cohorts_alt.loc[[x>=2027 for x in simulation.cohorts_alt.index.get_level_values(2)], 'retraite'] *= (1-0.1)
+#     simulation.cohorts_alt.loc[[x>=2027 for x in simulation.cohorts_alt.index.get_level_values(2)], 'cot'] *= (1+0.1)
+#     simulation.cohorts_alt.loc[[x>=2027 for x in simulation.cohorts_alt.index.get_level_values(2)], 'retraite'] *= (1-0.1)
     simulation.cohorts_alt.compute_net_transfers(name = 'net_transfers', taxes_list = taxes_list, payments_list = payments_list)
     simulation.create_present_values('net_transfers', default=False)
     
@@ -169,7 +169,7 @@ def produce_gen_accounts(year=1996):
     print 'Calcul de n1/n0------------------'
     print 'Scénario de référence : ', imba
     print 'Scénario alternatif : ', imba_alt
-    age_class_pv.to_excel(xls+"\gen_accounts_combine.xlsx", 'gen_accounts')
+    age_class_pv.to_excel(xls+"\gen_accounts_agre.xlsx", 'gen_accounts')
     
 
 def produce_percap_transfert_flux(simulation=simulation, year_list = range(1996, 2050, 10), year_min=1996):
@@ -199,7 +199,7 @@ def produce_percap_transfert_flux(simulation=simulation, year_list = range(1996,
         flux_df[str(year)+'_alt'] *= ((1+simulation.discount_rate_alt)/(1+simulation.growth_rate_alt))**(year - year_min)
         print flux_df.head()
     
-        flux_df.to_excel(str(xls)+'\_combine_'+str(year)+'.xlsx', 'flux')
+        flux_df.to_excel(str(xls)+'\_agre_'+str(year)+'.xlsx', 'flux')
         gc.collect()
 
 
@@ -213,7 +213,7 @@ def produce_agg_transfert_flux(simulation=simulation, year_list = range(1996, 20
     tmp_2 = simulation.cohorts_alt.loc[:, ['net_transfers', 'pop', 'dsct']]
     tmp_2['running_transfers'] = tmp_2['net_transfers']
     tmp_2['net_transfers'] *= tmp_2['dsct']*tmp_2['pop']
-    print type(str(str(xls)+'\ESP_agg.xlsx'))
+    print type(str(str(xls)+'\agre_agg.xlsx'))
 
     for year in year_list:
         flux_df = AccountingCohorts(tmp).extract_generation(year=year, typ='net_transfers', age=0)
@@ -271,7 +271,7 @@ def produce_ipl_evolution(simulation, year_min = 1996):
         record.loc[year, "ipl"] = ipl/(8050.6e+09*(1+simulation.growth_rate)**(year-year_min))
         record.loc[year, 'ipl_réforme'] = ipl_alt/(8050.6e+09*(1+simulation.growth_rate)**(year-year_min))
 
-    record.to_excel(xls+'\ipl_flux_combine.xlsx', 'ipl_relative_au_pib')
+    record.to_excel(xls+'\ipl_flux_agre.xlsx', 'ipl_relative_au_pib')
     gc.collect()
 
 def produce_imbalance_evolution(simulation=simulation, year_min = 1996):
@@ -330,7 +330,7 @@ def produce_imbalance_evolution(simulation=simulation, year_min = 1996):
         
         record.loc[year, "déséquilibre"] = imbalance
         record.loc[year, 'déséquilibre_alt'] = imbalance_alt
-    record.to_excel(xls+'\imbalance_flux_combine.xlsx', 'flux de déséquilibre')
+    record.to_excel(xls+'\imbalance_flux_agre.xlsx', 'flux de déséquilibre')
     
 
 def cohorts_to_excels(simulation=simulation, to_print='base', suffix=''):
@@ -353,7 +353,7 @@ if __name__ == '__main__':
     produce_gen_accounts()
     produce_agg_transfert_flux()
     produce_percap_transfert_flux()
-    produce_ipl_evolution(simulation=simulation)
-    simulation = generate_simulation()
-    produce_imbalance_evolution(simulation=simulation)
+#     produce_ipl_evolution(simulation=simulation)
+#     simulation = generate_simulation()
+#     produce_imbalance_evolution(simulation=simulation)
 #     cohorts_to_excels(to_print='both', suffix='ret')

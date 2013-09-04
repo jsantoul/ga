@@ -12,11 +12,14 @@ from pandas.io.parsers import ExcelFile
 from cohorts.data_cohorts import DataCohorts
 from src import SRC_PATH
 
-import os
+import os, warnings
 
 class Simulation(object):
     """
-    A simulation object contains all parameters to compute a simulation 
+    A simulation object contains all parameters to compute a simulation. And perform multiple comparisons.
+    For now one can only compare two different scenarii.
+    
+    TODO: Prepare the arrival of the sub-level hypothesis sets : 
     """
     def __init__(self):
         # These attributes are the core data of a simulation
@@ -280,10 +283,10 @@ class Simulation(object):
     def compute_net_transfers(self, name = 'net_transfers', taxes_list = None, payments_list = None, default=True):
         if taxes_list is None:
             taxes_list = []
-            raise Warning('No list of taxes provided, using an empty list for computation')
+            warnings.warn('No list of taxes provided, using an empty list for computation')
         if payments_list is None:
             payments_list = []
-            raise Warning('No list of subsidies or payments provided, using an empty list for computation')
+            warnings.warn('No list of subsidies or payments provided, using an empty list for computation')
         if default:
             self.cohorts.compute_net_transfers(name, taxes_list, payments_list)
         else:
