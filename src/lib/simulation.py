@@ -30,28 +30,6 @@ class Simulation(object):
         self.year_length = 0
         self.country = None
 
-        # Base hypothesis set : TODO: remove this
-#         self.population = None
-#         self.growth_rate = None #Growth rate of the economy
-#         self.population_growth_rate = None
-#         self.discount_rate = None
-#         self.country = None
-#         self.net_gov_spendings = 0
-#         self.cohorts = None #A DataCohorts object
-#         self.aggregate_pv = None #An AccountingCohorts object
-#         self.percapita_pv = None #An AccountingCohorts object
-#         self.net_gov_wealth = 0
-       
-        # Duplicated attributes to compute elasticities TODO: remove this
-#         self.population_alt = None
-#         self.growth_rate_alt = None
-#         self.discount_rate_alt = None
-#         self.net_gov_spendings_alt = 0
-#         self.population_growth_rate_alt = None
-#         self.net_gov_wealth_alt = 0
-#         self.cohorts_alt = None #A DataCohorts object
-#         self.aggregate_pv_alt = None #An AccountingCohorts object
-#         self.percapita_pv_alt = None #An AccountingCohorts object
         
         # dictionnary attributes for comparison  
         self.population = {}
@@ -302,9 +280,33 @@ class Simulation(object):
         """
         
         #Part 1 : get existing values
+        attr_dict_value = {'growth rate': self.growth_rate, "discount rate":self.discount_rate, 
+                           "net gov spendings": self.net_gov_spendings, 
+                           "net gov wealth" : self.net_gov_wealth, 
+                           "population growth rate" : self.population_growth_rate}
+        attr_dict_existence = {"cohorte de base":self.cohorts, 
+                               "valeurs agrégées":self.aggregate_pv, 
+                               "valeurs par capita":self.percapita_pv}
+        
+        for attribute, dict in attr_dict_value.items():
+            try:
+                new_value = dict[scenario_name]
+                attr_dict_value[attribute] = new_value
+            except:
+                attr_dict_value[attribute] = False
+        
+        for dataframe, dict in attr_dict_existence.items():
+            try:
+                attr_dict_existence[dataframe] = (dict is not None)
+                print "try succedeed" #test line
+            except:
+                attr_dict_existence[dataframe] = False
+        
         #Part 2 : print what is existing
-        print "TODO :( "
-        pass
+        
+        print attr_dict_value
+        print attr_dict_existence
+
 
 #===============================================================================
 # Set of methods to conduct the simulation itself
