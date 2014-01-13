@@ -29,18 +29,18 @@ class Simulation(object):
         self.tax_projection = {}
         self.year_length = 0
         self.country = None
-
+        # Note : all the attributes that are dictionnaries must remain dictionnaries.
         
         # dictionnary attributes for comparison  
         self.population = {}
         self.growth_rate = {}
         self.population_growth_rate = {}
         self.discount_rate = {} #actualisation rate
-        self.net_gov_spendings = {}
+        self.net_gov_spendings = {'default':0}
         self.cohorts = {} #A dict of DataCohorts object
         self.aggregate_pv = {} #An dict of AccountingCohorts object
         self.percapita_pv = {} #An dict of AccountingCohorts object
-        self.net_gov_wealth = {}
+        self.net_gov_wealth = {'default':0}
 
         
 #===============================================================================
